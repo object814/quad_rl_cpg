@@ -27,7 +27,7 @@ class CPG:
         self.current_amplitude = amplitude
         self.current_phase = phase
 
-        # Define parameter limits (example limits, adjust as necessary)
+        # Define parameter limits (TODO: adjust as necessary)
         self.amplitude_min = 0.05
         self.amplitude_max = 0.3
         self.frequency_min = 0.5
@@ -70,12 +70,15 @@ class CPG:
 
     def update(self, amplitude_delta, frequency_delta, phase_delta):
         """
-        Update the CPG parameters.
+        Update the CPG parameters and Calculate the foot position based on current CPG state.
 
         Args:
             amplitude_delta (float): Change in amplitude.
             frequency_delta (float): Change in frequency.
             phase_delta (float): Change in phase.
+
+        Returns:
+            tuple: Desired foot position (x, z).    
         """
         self.amplitude = np.clip(self.amplitude + amplitude_delta, self.amplitude_min, self.amplitude_max)
         self.frequency = np.clip(self.frequency + frequency_delta, self.frequency_min, self.frequency_max)
@@ -84,9 +87,6 @@ class CPG:
 
         if self.debug:
             print(f"[DEBUG] CPG updated - amplitude: {self.amplitude}, frequency: {self.frequency}, phase: {self.phase}")
-
-
-        #Update the internal CPG states over time.
 
         # Update amplitude using dynamic equation
         convergence_rate = 10.0  # Coefficient to control convergence speed
@@ -99,14 +99,6 @@ class CPG:
         if self.debug:
             print(f"[DEBUG] CPG stepped - current amplitude: {self.current_amplitude}, current phase: {self.current_phase}")
 
-
-    def get_foot_position(self):
-        """
-        Calculate the desired foot position based on current CPG state.
-
-        Returns:
-            tuple: Desired foot position (x, z).
-        """
         # Calculate desired x and z positions in the leg's local frame
         x_foot = -self.d_step * (self.current_amplitude - 1) * np.cos(self.current_phase)
         

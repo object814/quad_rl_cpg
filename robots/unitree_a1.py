@@ -126,12 +126,10 @@ class UnitreeA1:
         leg_names = ["FR", "FL", "RR", "RL"]
         for i, leg_name in enumerate(leg_names):
             amplitude_delta, frequency_delta, phase_delta = cpg_actions[i]
-            # Update CPG parameters
-            self.cpg_controllers[leg_name].update(amplitude_delta, frequency_delta, phase_delta)
 
         # Generate target foot positions for each leg
         target_positions = {
-            leg: self.cpg_controllers[leg].get_foot_position() for leg in leg_names
+            leg: self.cpg_controllers[leg].update(amplitude_delta, frequency_delta, phase_delta) for leg in leg_names
         }
 
         # Calculate the joint angles using inverse kinematics
