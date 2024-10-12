@@ -88,7 +88,7 @@ class CPG:
         if self.debug:
             print(f"[DEBUG] CPG stepped - current amplitude: {self.current_amplitude}, current phase: {self.current_phase}")
 
-    def get_foot_position(self, d_step=0.1, h=0.35, gc=0.05, gp=0):
+    def get_foot_position(self, d_step=0.1, h=0.35, gc=0.05):
         """
         Calculate the desired foot position based on current CPG state.
 
@@ -96,7 +96,6 @@ class CPG:
             d_step (float): Maximum step length.
             h (float): Robot height.
             gc (float): Maximum swing height.
-            gp (float): Maximum stance penetration.
 
         Returns:
             tuple: Desired foot position (x, z).
@@ -108,7 +107,7 @@ class CPG:
         if np.sin(self.current_phase) > 0:
             z_foot = -h + gc * np.sin(self.current_phase)
         else:
-            z_foot = -h + gp * np.sin(self.current_phase)
+            z_foot = -h
 
         if self.debug:
             print(f"[DEBUG] Foot position - x: {x_foot}, z: {z_foot}")
