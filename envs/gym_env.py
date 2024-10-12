@@ -6,13 +6,64 @@ import numpy as np
 
 from robots.unitree_a1 import UnitreeA1
 
+class Observations():
+    """
+    Custom class for managing the state of the environment.
+    
+    Environment observations:
+    - Joint positions (4 legs, 2 joints each)
+    - Joint velocities (4 legs, 2 joints each)
+    - Base position (x, y, z)
+    - Base orientation (quaternion)
+    - Foot velocities (4 legs)
+    """
+    def __init__(self):
+        self._joint_positions = []
+        self._joint_velocities = []
+        self._base_position = []
+        self._base_orientation = []
+        self._foot_velocities = []
+    
+    def update(self, joint_positions, joint_velocities, base_position, base_orientation, foot_velocities):
+        self._joint_positions = joint_positions
+        self._joint_velocities = joint_velocities
+        self._base_position = base_position
+        self._base_orientation = base_orientation
+        self._foot_velocities = foot_velocities
+
+    @property
+    def observations(self):
+        return np.concatenate([
+            self._joint_positions,
+            self._joint_velocities,
+            self._base_position,
+            self._base_orientation,
+            self._foot_velocities
+        ])
+    @property
+    def joint_positions(self):
+        return self._joint_positions
+    @property
+    def joint_velocities(self):
+        return self._joint_velocities
+    @property
+    def base_position(self):
+        return self._base_position
+    @property
+    def base_orientation(self):
+        return self._base_orientation
+    @property
+    def foot_velocities(self):  
+        return self._foot_velocities
+    
+
 class UnitreeA1Env(gym.Env):
     """
     Custom OpenAI Gym environment for Unitree A1 with CPG control.
     The agent controls the amplitude, while phase and frequency are kept constant.
     """
     
-    def __init__(self, dt=0.01, debug=False):
+    def __init__(self, dt=0.01, render=True, debug=False):
         """
         Initialize the Unitree A1 environment.
 
@@ -22,56 +73,78 @@ class UnitreeA1Env(gym.Env):
         """
         super(UnitreeA1Env, self).__init__()
 
-        # Initialize the Pybullet client
-        client_id = p.connect(p.GUI)
-        p.setTimeStep(dt, physicsClientId=client_id)
-        p.setGravity(0, 0, -9.81, physicsClientId=client_id)
-        p.setAdditionalSearchPath(pybullet_data.getDataPath())
+        self.debug = debug
 
-        # Initialize the Unitree A1 robot simulation
+        # Initialize the Pybullet client with robot
+        if render:
+            client_id = p.connect(p.GUI)
+        else:
+            client_id = p.connect(p.DIRECT)
         self.robot = UnitreeA1(client=client_id, dt=dt, debug=debug)
-        self.dt = dt
-        self.time_step = 0
-        self.max_steps = 1000  # Max steps per episode
 
-        # Action space: Binary action to increase amplitude, with 4 legs
-        # Action space will have 4 legs with binary actions: 0 (do nothing), 1 (increase amplitude)
-        self.action_space = spaces.Box(low=0, high=1, shape=(4,), dtype=np.float32)
+        # Action space: 12 actions, each can be -1 (decrease) or 1 (increase)
+        self.action_space = spaces.Box(low=-1, high=1, shape=(12,), dtype=np.int8)
 
         # Observation space: Concatenated robot observations
         obs_dim = self.robot.get_observation_dimension()
         self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(obs_dim,), dtype=np.float32)
+        self.observation = Observations() # Custom observation class
 
-        # Initial values for amplitude (phase and frequency are constant)
-        self.amplitude = np.array([0.01, 0.01, 0.01, 0.01])  # Start with 0.01 amplitude for each leg
-        self.amplitude_target = 0.2  # Target amplitude
-        self.amplitude_step = 0.01  # Step size for increasing amplitude
+    def _act(self, action):
+        """
+        Apply action to the robot in the simulation and step simulation.
+        """
+        self.robot.apply_cpg_action(action)
+        self.robot.step()
+        return True
+
+    def _observe(self):
+        """
+        Get the current observation from the simulation.
+        """
+        joint_positions, joint_velocities, base_position, base_orientation, foot_velocities = self.robot.get_observation()
+        self.observation.update(joint_positions, joint_velocities, base_position, base_orientation, foot_velocities)
+        return self.observation.observations
+    
+    def _get_reward(self):
+        """
+        Reward function for the environment.
+        """
+        joint_positions = self.observation.joint_positions
+        joint_velocities = self.observation.joint_velocities
+        return 0.0
+    
+    def _done(self):
+        """
+        Check if the episode is done.
+        """
+        return False
 
     def reset(self):
         """
         Reset the environment to the initial state and return the first observation.
         """
-        self.time_step = 0
+        # Reset simulation and robot
         self.robot.reset()
 
-        # Reset amplitude to the initial values
-        self.amplitude = np.array([0.01, 0.01, 0.01, 0.01])
-
-        # Get the initial observation
-        observation = self.robot.get_observation()
-
-        if self.robot.debug:
-            print(f"[DEBUG] Reset environment at timestep {self.time_step}")
+        if self.debug:
+            print(f"[DEBUG] Reset observation")
         
-        return observation
+        return self._observe()
+    
+    def close(self):
+        """
+        Close the environment.
+        """
+        del(self.robot)
 
     def step(self, action):
         """
-        Execute one time step within the environment.
+        Executes an action and returns new state, reward, done, and addition info if needed.
 
         Args:
-            action (np.array): Actions to increase amplitude for each leg.
-                - Values in `action` should be 0 (do nothing) or 1 (increase amplitude).
+            action (np.array): Actions to increase or decrease CPG parameters for each leg.
+                - Values in `action` should be -1 (decrease) or 1 (increase).
 
         Returns:
             observation (np.array): The next observation.
@@ -79,46 +152,35 @@ class UnitreeA1Env(gym.Env):
             done (bool): Whether the episode has ended.
             info (dict): Additional information about the step.
         """
-        # Clip the action to ensure valid values (0 for no change, 1 for increase)
-        action = np.clip(action, 0, 1)
+        # Clip the action values to -1 or 1 with integer type
+        action = np.array(action, dtype=np.int8)
+        for a in action:
+            if a < 0:
+                a = -1 # decrease
+            else:
+                a = 1 # increase
 
-        # Update amplitudes based on the action, increase only until it reaches 0.2
-        for i in range(4):  # 4 legs
-            if action[i] == 1 and self.amplitude[i] < self.amplitude_target:
-                self.amplitude[i] = min(self.amplitude[i] + self.amplitude_step, self.amplitude_target)
-
-        if self.robot.debug:
-            print(f"[DEBUG] Updated amplitudes: {self.amplitude}")
-
-        # Keep frequency and phase constant
-        cpg_actions = np.zeros((4, 3))
-        cpg_actions[:, 0] = self.amplitude - self.robot.cpg_controllers['FR'].amplitude  # Adjust amplitude
-        # Frequency (index 1) and phase (index 2) stay constant (0 adjustment)
-
-        # Apply CPG actions to the robot
-        self.robot.apply_cpg_action(cpg_actions)
-
-        # Step the simulation
-        self.robot.step()
+        # Check action shape
+        assert action.shape == (12,), f"[ERROR] Invalid action shape. Expected (12,), got {action.shape}"
+        
+        # Apply the action to the robot and step simulation
+        self._act(action)
 
         # Get the next observation
-        observation = self.robot.get_observation()
+        observation = self._observe()
 
-        # Define a simple reward function (example: penalize large changes in amplitude)
-        reward = -np.sum(np.abs(cpg_actions[:, 0]))  # Penalize large changes in amplitude
+        # Get the reward
+        reward = self._get_reward()
 
-        # Check if the episode is done (e.g., max steps reached)
-        self.time_step += 1
-        done = self.time_step >= self.max_steps
+        # Check if the episode is done
+        done = self._done()
 
         if self.robot.debug:
-            print(f"[DEBUG] Step: {self.time_step}, Reward: {reward}, Done: {done}")
+            print(f"[DEBUG] Step reward: {reward}")
+            if done:
+                print("[DEBUG] Episode done")
 
+        # Addition info (optional)
         info = {}
-        return observation, reward, done, info
 
-    def render(self, mode='human'):
-        """
-        Render the environment (optional, not implemented here).
-        """
-        pass
+        return observation, reward, done, info
