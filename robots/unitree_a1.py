@@ -130,8 +130,8 @@ class UnitreeA1:
             self.cpg_controllers[leg_name].update(amplitude_delta, frequency_delta, phase_delta)
 
         # Step CPG controllers to update internal states
-        for leg in leg_names:
-            self.cpg_controllers[leg].step()
+        #for leg in leg_names:
+        #    self.cpg_controllers[leg].step()
 
         # Generate target foot positions for each leg
         target_positions = {

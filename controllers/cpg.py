@@ -48,6 +48,7 @@ class CPG:
         if self.debug:
             print(f"[DEBUG] Initialized CPG with amplitude: {amplitude}, frequency: {frequency}, phase: {phase}")
 
+
     def reset(self, amplitude=0.01, frequency=5.0, phase=0.0):
         """
         Reset the CPG parameters to their initial values.
@@ -65,6 +66,7 @@ class CPG:
 
         if self.debug:
             print(f"[DEBUG] CPG reset to amplitude: {amplitude}, frequency: {frequency}, phase: {phase}")
+
 
     def update(self, amplitude_delta, frequency_delta, phase_delta):
         """
@@ -84,11 +86,8 @@ class CPG:
             print(f"[DEBUG] CPG updated - amplitude: {self.amplitude}, frequency: {self.frequency}, phase: {self.phase}")
 
 
+        #Update the internal CPG states over time.
 
-    def step(self):
-        """
-        Update the internal CPG states over time.
-        """
         # Update amplitude using dynamic equation
         convergence_rate = 10.0  # Coefficient to control convergence speed
         self.current_amplitude += convergence_rate * (self.amplitude - self.current_amplitude) * self.dt
