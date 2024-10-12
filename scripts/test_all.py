@@ -5,12 +5,8 @@ import time
 from envs.gym_env import UnitreeA1Env  # Assuming the environment is in unitree_a1_env.py
 
 def test_unitree_a1():
-    # Connect to PyBullet with GUI to visualize the robot
-    client = p.connect(p.GUI)
-    p.setAdditionalSearchPath(pybullet_data.getDataPath())
-
     # Create environment instance
-    env = UnitreeA1Env(client_id=client, dt=0.01, debug=True)
+    env = UnitreeA1Env(dt=0.01, debug=False)
 
     # Reset the environment
     obs = env.reset()

@@ -1,3 +1,5 @@
+import pybullet as p
+import pybullet_data
 import gym
 from gym import spaces
 import numpy as np
@@ -10,16 +12,21 @@ class UnitreeA1Env(gym.Env):
     The agent controls the amplitude, while phase and frequency are kept constant.
     """
     
-    def __init__(self, client_id, dt=0.01, debug=False):
+    def __init__(self, dt=0.01, debug=False):
         """
         Initialize the Unitree A1 environment.
 
         Args:
-            client_id (int): PyBullet client ID.
             dt (float): Time step for the simulation and CPG updates.
             debug (bool): Whether to enable debug mode.
         """
         super(UnitreeA1Env, self).__init__()
+
+        # Initialize the Pybullet client
+        client_id = p.connect(p.GUI)
+        p.setTimeStep(dt, physicsClientId=client_id)
+        p.setGravity(0, 0, -9.81, physicsClientId=client_id)
+        p.setAdditionalSearchPath(pybullet_data.getDataPath())
 
         # Initialize the Unitree A1 robot simulation
         self.robot = UnitreeA1(client=client_id, dt=dt, debug=debug)

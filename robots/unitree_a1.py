@@ -72,6 +72,7 @@ class UnitreeA1:
             print("[DEBUG] Initializing Unitree A1 robot...")
 
         self.robot = p.loadURDF(model_pth, self.reset_position, useFixedBase=self.fixed_base, physicsClientId=self.client)
+        self.plane = p.loadURDF("plane.urdf", physicsClientId=self.client)
 
         # Create a CPG controller for each leg with debug flag
         self.cpg_controllers = {
@@ -182,6 +183,7 @@ class UnitreeA1:
         """
         joint_positions = []
         joint_velocities = []
+        foot_velocities = []
 
         # Collect positions and velocities for controlled joints only
         for i in self.controlled_joint_indices:
@@ -195,25 +197,33 @@ class UnitreeA1:
         # Get the base position and orientation
         base_position, base_orientation = p.getBasePositionAndOrientation(self.robot, physicsClientId=self.client)
 
+        # TODO: Foot contact information
+        # Use the z position
+
+        # Foot tips velocity
+        for link_index in self.end_effector_indices:
+            link_state = p.getLinkState(self.robot, link_index, computeLinkVelocity=True, physicsClientId=self.client)
+            linear_velocity = link_state[6] # e.g. (1.0, 1.2, -0.5)
+            # Calculate absolute velocity
+            linear_velocity = np.linalg.norm(linear_velocity)
+            foot_velocities.append(linear_velocity)
+        
         # Convert all values to numpy arrays for consistency
         joint_positions = np.array(joint_positions)
         joint_velocities = np.array(joint_velocities)
+        foot_velocities = np.array(foot_velocities)
         base_position = np.array(base_position)
         base_orientation = np.array(base_orientation)
 
-        # Normalize the base position and orientation if needed (you may want to add limits for normalization)
-        base_position_normalized = base_position  # Can add normalization here if needed
-        base_orientation_normalized = base_orientation  # Can add normalization here if needed
-
         # Ensure the total observation dimension is correct
-        dimension = len(joint_positions) + len(joint_velocities) + len(base_position_normalized) + len(base_orientation_normalized)
+        dimension = len(joint_positions) + len(joint_velocities) + len(base_position) + len(base_orientation) + len(foot_velocities)
         assert dimension == self.get_observation_dimension(), "Observation dimension mismatch"
 
-        return joint_positions, joint_velocities, base_position_normalized, base_orientation_normalized
+        return joint_positions, joint_velocities, base_position, base_orientation, foot_velocities
 
     def get_observation_dimension(self):
         """Return the dimension of the observation."""
-        return 2 * self.num_controlled_joints + 7
+        return 2 * self.num_controlled_joints + 7 + 4
     
     def get_action_dimension(self):
         """
