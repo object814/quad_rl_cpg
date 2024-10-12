@@ -198,11 +198,10 @@ class UnitreeA1:
         base_position, base_orientation = p.getBasePositionAndOrientation(self.robot, physicsClientId=self.client)
 
         # TODO: Foot contact information
-        # Use the z position
-
-        # Foot tips velocity
+        # Foot tips position and velocity
         for link_index in self.end_effector_indices:
             link_state = p.getLinkState(self.robot, link_index, computeLinkVelocity=True, physicsClientId=self.client)
+            link_position = link_state[0]
             linear_velocity = link_state[6] # e.g. (1.0, 1.2, -0.5)
             # Calculate absolute velocity
             linear_velocity = np.linalg.norm(linear_velocity)
