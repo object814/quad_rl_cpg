@@ -8,6 +8,7 @@ import numpy as np
 import math
 
 from controllers.cpg import CPG
+from animations.CPGAnimation import CPGAnimation
 
 CONTROLLER_JOINT_INDICES = [3, 4, 7, 8, 11, 12, 15, 16]  # Thigh and calf joints
 JOINT_INDEX = {
@@ -74,6 +75,11 @@ class UnitreeA1:
         self.robot = p.loadURDF(model_pth, self.reset_position, useFixedBase=self.fixed_base, physicsClientId=self.client)
         self.plane = p.loadURDF("plane.urdf", physicsClientId=self.client)
 
+        self.leg_names = ["FR", "FL", "RR", "RL"]
+    
+        # Create an object to for displaying a CPG Animation
+        self.animation = CPGAnimation(self.leg_names) 
+
         # Create a CPG controller for each leg with debug flag
         self.cpg_controllers = {
             "FR": CPG(dt=self.dt, debug=self.debug),
@@ -123,14 +129,22 @@ class UnitreeA1:
         # Ensure that cpg_actions has the correct shape
         assert cpg_actions.shape == (4, 3), f"[ERROR] Invalid shape for cpg_actions. Expected (4, 3), got {cpg_actions.shape}"
 
-        leg_names = ["FR", "FL", "RR", "RL"]
-        for i, leg_name in enumerate(leg_names):
+        # Initialize an empty dictionary to store the target foot positions for each leg
+        target_positions = {}
+        for i, leg_name in enumerate(self.leg_names):
             amplitude_delta, frequency_delta, phase_delta = cpg_actions[i]
+            
+            # Update the CPG for this leg and get the new foot position
+            foot_position = self.cpg_controllers[leg_name].update(amplitude_delta, frequency_delta, phase_delta)
+    
+            # Store the new foot position in the dictionary
+            target_positions[leg_name] = foot_position
 
-        # Generate target foot positions for each leg
-        target_positions = {
-            leg: self.cpg_controllers[leg].update(amplitude_delta, frequency_delta, phase_delta) for leg in leg_names
-        }
+        # Update the CPG animation with new target positions
+        #print("DEBUGGG, this is target_positions")
+        #print(target_positions)
+        self.animation.animate(target_positions)
+
 
         # Calculate the joint angles using inverse kinematics
         joint_angles = self.compute_joint_angles(target_positions)
@@ -138,6 +152,8 @@ class UnitreeA1:
         # Apply the joint positions using position control
         self.apply_joint_positions(joint_angles)
         self.step()
+
+
 
     def compute_joint_angles(self, target_positions):
         """
