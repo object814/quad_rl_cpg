@@ -58,4 +58,4 @@ class CPGAnimation:
 
         plt.show(block=False)  # Non-blocking
         plt.pause(0.001)  # Allow GUI to process events
-        print("HEYYYYY")
+        # print("HEYYYYY")

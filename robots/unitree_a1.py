@@ -18,6 +18,7 @@ JOINT_INDEX = {
     "RL": [15, 16]
 }
 END_EFFECTOR_INDICES = [5, 9, 13, 17]  # End-effector indices for each leg
+LEG_NAMES = ["FR", "FL", "RR", "RL"] # Leg names
 
 # Inverse kinematics for each leg
 def inverse_kinematics_2d(x, y, L1=0.2, L2=0.2):
@@ -79,18 +80,13 @@ class UnitreeA1:
         self.robot = p.loadURDF(model_pth, self.reset_position, useFixedBase=self.fixed_base, physicsClientId=self.client)
         self.plane = p.loadURDF("plane.urdf", physicsClientId=self.client)
 
-        self.leg_names = ["FR", "FL", "RR", "RL"]
+        self.leg_names = LEG_NAMES
     
         # Create an object to for displaying a CPG Animation
-        self.animation = CPGAnimation(self.leg_names) 
+        self.animation = CPGAnimation(self.leg_names)
 
         # Create a CPG controller for each leg with debug flag
-        self.cpg_controllers = {
-            "FR": CPG(dt=self.dt, debug=self.debug),
-            "FL": CPG(dt=self.dt, debug=self.debug),
-            "RR": CPG(dt=self.dt, debug=self.debug),
-            "RL": CPG(dt=self.dt, debug=self.debug)
-        }
+        self.cpg_controllers = {leg_name: CPG(dt=self.dt, debug=self.debug) for leg_name in self.leg_names}
 
         # Initialize joint and link indices
         self.controlled_joint_indices = CONTROLLER_JOINT_INDICES
@@ -152,7 +148,7 @@ class UnitreeA1:
             target_positions[leg_name] = foot_position
 
         # Update the CPG animation with new target positions
-        # print("DEBUGGG, this is target_positions")
+        # print("DEBUG, this is target_positions")
         # print(target_positions)
         self.animation.animate(target_positions)
 

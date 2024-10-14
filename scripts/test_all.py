@@ -18,7 +18,7 @@ def test_unitree_a1():
     for i in range(steps):
         observation, reward, done, info = env.step(action)
         time.sleep(dt)
-        input("Press Enter to continue...")
+        # input("Press Enter to continue...")
     
     env.close()
 
