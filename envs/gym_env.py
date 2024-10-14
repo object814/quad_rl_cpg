@@ -3,6 +3,7 @@ import pybullet_data
 import gym
 from gym import spaces
 import numpy as np
+from scipy.spatial.transform import Rotation as R
 
 from robots.unitree_a1 import UnitreeA1
 
@@ -16,6 +17,7 @@ class Observations():
     - Base position (x, y, z)
     - Base orientation (quaternion)
     - Foot velocities (4 legs)
+    - Foot contacts (4 legs)
     """
     def __init__(self):
         self._joint_positions = []
@@ -23,22 +25,25 @@ class Observations():
         self._base_position = []
         self._base_orientation = []
         self._foot_velocities = []
+        self._foot_contacts = []
     
-    def update(self, joint_positions, joint_velocities, base_position, base_orientation, foot_velocities):
+    def update(self, joint_positions, joint_velocities, base_position, base_orientation, foot_velocities, foot_contacts):
         self._joint_positions = joint_positions
         self._joint_velocities = joint_velocities
         self._base_position = base_position
         self._base_orientation = base_orientation
         self._foot_velocities = foot_velocities
+        self._foot_contacts = foot_contacts
 
     @property
-    def observations(self):
+    def all_observations(self):
         return np.concatenate([
             self._joint_positions,
             self._joint_velocities,
             self._base_position,
             self._base_orientation,
-            self._foot_velocities
+            self._foot_velocities,
+            self._foot_contacts
         ])
     @property
     def joint_positions(self):
@@ -55,6 +60,9 @@ class Observations():
     @property
     def foot_velocities(self):  
         return self._foot_velocities
+    @property
+    def foot_contacts(self):
+        return self._foot_contacts
     
 
 class UnitreeA1Env(gym.Env):
@@ -103,17 +111,86 @@ class UnitreeA1Env(gym.Env):
         """
         Get the current observation from the simulation.
         """
-        joint_positions, joint_velocities, base_position, base_orientation, foot_velocities = self.robot.get_observation()
-        self.observation.update(joint_positions, joint_velocities, base_position, base_orientation, foot_velocities)
-        return self.observation.observations
+        joint_positions, joint_velocities, base_position, base_orientation, foot_velocities, foot_contacts = self.robot.get_observation()
+        self.observation.update(joint_positions, joint_velocities, base_position, base_orientation, foot_velocities, foot_contacts)
+        return self.observation
     
-    def _get_reward(self):
+    def _get_reward(self, observation: Observations, full_reward=False):
         """
-        Reward function for the environment.
+        Calculate the reward based on the observation.
+
+        Args:
+            observation (Observations): The current observation.
+            full_reward (bool): Whether to return the full reward components.
+
+        Returns:
+        if not full_reward:
+            reward (float): The reward for the current step.
+        if full_reward:
+            reward (float): The total reward.
+            forward_progress_reward (float): Reward for forward progress.
+            roll_pitch_stability_penalty (float): Penalty for roll and pitch stability.
+            payload_drop_penalty (float): Penalty for payload drop.
+            foot_slip_penalty (float): Penalty for foot slip
+
         """
-        joint_positions = self.observation.joint_positions
-        joint_velocities = self.observation.joint_velocities
-        return 0.0
+        # Initialize tune-able params, reward weights
+        # TODO: Set hyperparameters with config file
+        forward_progress_reward_weight = 1.0
+        roll_stability_penalty_weight = 1.0
+        pitch_stability_penalty_weight = 1.0
+        payload_drop_penalty_weight = 1.0
+        foot_slip_penalty_weight = 1.0
+        max_roll = 0.6 #In radians, around 34 degrees
+        min_roll = -0.6
+        max_pitch = 0.6
+        min_pitch = -0.6
+        discount_factor = 0.99
+        roll_pitch_range_without_penalty = 0.1745 #10 degrees
+        threashold = roll_pitch_range_without_penalty ** 2
+
+        # Extract the info from observations
+        # ref_joint_positions = observation.joint_positions
+        # ref_joint_velocities = observation.joint_velocities
+        ref_base_position = observation.base_position
+        ref_base_orientation = observation.base_orientation
+        ref_foot_velocities = observation.foot_velocities
+        ref_foot_contacts = observation.foot_contacts
+
+        ## Calculate the reward based on the observation
+
+        # Calculate the reward for distance travelled from starting position
+        forward_progress_reward = forward_progress_reward_weight*((ref_base_position[0]**2 + ref_base_position[1]**2 + ref_base_position[2]**2)**0.5)
+
+        # Calculate the reward for roll and pitch stability
+        # Get Roll, Pitch, Yaw from quaternion
+        r = R.from_quat(ref_base_orientation)
+        roll, pitch, yaw = r.as_euler('xyz', degrees=False)
+        roll_stability_penalty = roll_stability_penalty_weight * max(0, roll ** 2 - threashold)
+        pitch_stability_penalty = pitch_stability_penalty_weight * max(0, pitch ** 2 - threashold)
+        roll_pitch_stability_penalty = roll_stability_penalty + pitch_stability_penalty
+
+        # Calculate the penalty for payload drop
+        if roll < min_roll or roll > max_roll or pitch < min_pitch or pitch > max_pitch:
+            payload_drop_penalty = 100 * payload_drop_penalty_weight
+        else:
+            payload_drop_penalty = 0
+        
+        # Calculate the penalty for foot slip
+        # If the foot has linear velocity while contact is true, then foot slip has occured
+        for i in range(4):
+            if ref_foot_contacts[i] == True and ref_foot_velocities[i] > 1e-2:
+                foot_slip_penalty = 10 * foot_slip_penalty_weight
+                break
+            else:
+                foot_slip_penalty = 0
+        
+        # Calculate the total reward
+        reward = forward_progress_reward - roll_pitch_stability_penalty - payload_drop_penalty - foot_slip_penalty
+        if full_reward:
+            return reward, forward_progress_reward, roll_pitch_stability_penalty, payload_drop_penalty, foot_slip_penalty
+        else:
+            return reward
     
     def _done(self):
         """
@@ -167,11 +244,11 @@ class UnitreeA1Env(gym.Env):
         # Apply the action to the robot and step simulation
         self._act(action)
 
-        # Get the next observation
+        # Get the next observation, return custom Observation class
         observation = self._observe()
 
         # Get the reward
-        reward = self._get_reward()
+        reward = self._get_reward(observation)
 
         # Check if the episode is done
         done = self._done()
@@ -185,3 +262,40 @@ class UnitreeA1Env(gym.Env):
         info = {}
 
         return observation, reward, done, info
+    
+    def step_for_reward_testing(self, action):
+        """
+        A test function that returns full reward info while stepping.
+        """
+        # Clip the action values to -1 or 1 with integer type
+        action = np.array(action, dtype=np.int8)
+        for a in action:
+            if a < 0:
+                a = -1 # decrease
+            else:
+                a = 1 # increase
+
+        # Check action shape
+        assert action.shape == (12,), f"[ERROR] Invalid action shape. Expected (12,), got {action.shape}"
+        
+        # Apply the action to the robot and step simulation
+        self._act(action)
+
+        # Get the next observation, return custom Observation class
+        observation = self._observe()
+
+        # Calculate the reward
+        reward, forward_progress_reward, roll_pitch_stability_penalty, payload_drop_penalty, foot_slip_penalty = self._get_reward(observation, full_reward=True)
+
+        # Check if the episode is done
+        done = self._done()
+
+        if self.robot.debug:
+            print(f"[DEBUG] Step reward: {reward}")
+            if done:
+                print("[DEBUG] Episode done")
+
+        # Addition info (optional)
+        info = {}
+
+        return observation, reward, forward_progress_reward, roll_pitch_stability_penalty, payload_drop_penalty, foot_slip_penalty, done, info
