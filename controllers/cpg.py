@@ -27,7 +27,7 @@ class CPG:
         self.current_amplitude = amplitude
         self.current_phase = phase
 
-        # Define parameter limits (example limits, adjust as necessary)
+        # Define parameter limits (TODO: adjust as necessary)
         self.amplitude_min = 0.05
         self.amplitude_max = 0.3
         self.frequency_min = 0.5
@@ -35,8 +35,19 @@ class CPG:
         self.phase_min = -np.pi
         self.phase_max = np.pi
 
+        """
+        Define robot parameters
+            d_step (float): Maximum step length.
+            h (float): Robot height.
+            gc (float): Maximum swing height.
+        """
+        self.d_step=0.1
+        self.h=0.35
+        self.gc=0.05
+
         if self.debug:
             print(f"[DEBUG] Initialized CPG with amplitude: {amplitude}, frequency: {frequency}, phase: {phase}")
+
 
     def reset(self, amplitude=0.01, frequency=5.0, phase=0.0):
         """
@@ -56,14 +67,18 @@ class CPG:
         if self.debug:
             print(f"[DEBUG] CPG reset to amplitude: {amplitude}, frequency: {frequency}, phase: {phase}")
 
+
     def update(self, amplitude_delta, frequency_delta, phase_delta):
         """
-        Update the CPG parameters.
+        Update the CPG parameters and Calculate the foot position based on current CPG state.
 
         Args:
             amplitude_delta (float): Change in amplitude.
             frequency_delta (float): Change in frequency.
             phase_delta (float): Change in phase.
+
+        Returns:
+            tuple: Desired foot position (x, z).    
         """
         self.amplitude = np.clip(self.amplitude + amplitude_delta, self.amplitude_min, self.amplitude_max)
         self.frequency = np.clip(self.frequency + frequency_delta, self.frequency_min, self.frequency_max)
@@ -73,10 +88,6 @@ class CPG:
         if self.debug:
             print(f"[DEBUG] CPG updated - amplitude: {self.amplitude}, frequency: {self.frequency}, phase: {self.phase}")
 
-    def step(self):
-        """
-        Update the internal CPG states over time.
-        """
         # Update amplitude using dynamic equation
         convergence_rate = 10.0  # Coefficient to control convergence speed
         self.current_amplitude += convergence_rate * (self.amplitude - self.current_amplitude) * self.dt
@@ -88,27 +99,14 @@ class CPG:
         if self.debug:
             print(f"[DEBUG] CPG stepped - current amplitude: {self.current_amplitude}, current phase: {self.current_phase}")
 
-    def get_foot_position(self, d_step=0.1, h=0.35, gc=0.05, gp=0):
-        """
-        Calculate the desired foot position based on current CPG state.
-
-        Args:
-            d_step (float): Maximum step length.
-            h (float): Robot height.
-            gc (float): Maximum swing height.
-            gp (float): Maximum stance penetration.
-
-        Returns:
-            tuple: Desired foot position (x, z).
-        """
         # Calculate desired x and z positions in the leg's local frame
-        x_foot = -d_step * (self.current_amplitude - 1) * np.cos(self.current_phase)
+        x_foot = -self.d_step * (self.current_amplitude - 1) * np.cos(self.current_phase)
         
         # Calculate z position based on phase
         if np.sin(self.current_phase) > 0:
-            z_foot = -h + gc * np.sin(self.current_phase)
+            z_foot = -self.h + self.gc * np.sin(self.current_phase)
         else:
-            z_foot = -h + gp * np.sin(self.current_phase)
+            z_foot = -self.h
 
         if self.debug:
             print(f"[DEBUG] Foot position - x: {x_foot}, z: {z_foot}")
