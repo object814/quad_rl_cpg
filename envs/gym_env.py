@@ -63,13 +63,14 @@ class UnitreeA1Env(gym.Env):
     The agent controls the amplitude, while phase and frequency are kept constant.
     """
     
-    def __init__(self, dt=0.01, render=True, debug=False):
+    def __init__(self, dt=0.01, render=True, debug=False, animate_cpg=True):
         """
         Initialize the Unitree A1 environment.
 
         Args:
             dt (float): Time step for the simulation and CPG updates.
             debug (bool): Whether to enable debug mode.
+            animate_cpg (bool): Whether to animate the CPG controller.
         """
         super(UnitreeA1Env, self).__init__()
 
@@ -80,7 +81,7 @@ class UnitreeA1Env(gym.Env):
             client_id = p.connect(p.GUI)
         else:
             client_id = p.connect(p.DIRECT)
-        self.robot = UnitreeA1(client=client_id, dt=dt, debug=debug)
+        self.robot = UnitreeA1(client=client_id, dt=dt, debug=debug, animate_cpg=animate_cpg)
 
         # Action space: 12 actions, each can be -1 (decrease) or 1 (increase)
         self.action_space = spaces.Box(low=-1, high=1, shape=(12,), dtype=np.int8)

@@ -52,7 +52,7 @@ def inverse_kinematics_2d(x, y, L1=0.2, L2=0.2):
 
 
 class UnitreeA1:
-    def __init__(self, client, dt, model_pth="assets/a1_description/urdf/a1.urdf", fixed_base=False, reset_position=[0, 0, 0.5], debug=False):
+    def __init__(self, client, dt, model_pth="assets/a1_description/urdf/a1.urdf", fixed_base=False, reset_position=[0, 0, 0.5], debug=False, animate_cpg=True):
         """
         Initialize Unitree A1 robot in PyBullet.
         
@@ -62,13 +62,15 @@ class UnitreeA1:
             model_pth (str): Path to the URDF file for the robot model.
             fixed_base (bool): Whether to fix the base of the robot.
             reset_position (list): Initial position of the robot.
-            debug (bool): Whether to enable debug mode for CPGs.
+            debug (bool): Whether to enable debug mode.
+            animate_cpg (bool): Whether to animate the CPGs.
         """
         self.client = client
         self.dt = dt
         self.fixed_base = fixed_base
         self.reset_position = reset_position
         self.debug = debug
+        self.animate_cpg = animate_cpg
 
         p.setTimeStep(dt, physicsClientId=self.client)
         p.setGravity(0, 0, -9.81, physicsClientId=self.client)
@@ -81,9 +83,10 @@ class UnitreeA1:
         self.plane = p.loadURDF("plane.urdf", physicsClientId=self.client)
 
         self.leg_names = LEG_NAMES
-    
-        # Create an object to for displaying a CPG Animation
-        self.animation = CPGAnimation(self.leg_names)
+
+        if self.animate_cpg:
+            # Create an object to for displaying a CPG Animation
+            self.animation = CPGAnimation(self.leg_names)
 
         # Create a CPG controller for each leg with debug flag
         self.cpg_controllers = {leg_name: CPG(dt=self.dt, debug=self.debug) for leg_name in self.leg_names}
@@ -150,7 +153,8 @@ class UnitreeA1:
         # Update the CPG animation with new target positions
         # print("DEBUG, this is target_positions")
         # print(target_positions)
-        self.animation.animate(target_positions)
+        if self.animate_cpg:
+            self.animation.animate(target_positions)
 
         # Calculate the joint angles using inverse kinematics
         joint_angles = self.compute_joint_angles(target_positions)
