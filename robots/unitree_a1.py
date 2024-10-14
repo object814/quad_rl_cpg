@@ -68,10 +68,6 @@ class UnitreeA1:
         self.reset_position = reset_position
         self.debug = debug
 
-        p.setTimeStep(dt, physicsClientId=self.client)
-        p.setGravity(0, 0, -9.81, physicsClientId=self.client)
-        p.setAdditionalSearchPath(pybullet_data.getDataPath())
-
         if self.debug:
             print("[DEBUG] Initializing Unitree A1 robot...")
 
@@ -96,11 +92,6 @@ class UnitreeA1:
         ]
         self.num_controlled_joints = len(self.controlled_joint_indices)
         self.reset()
-
-    def __del__(self):
-        """Close the PyBullet client."""
-        p.disconnect(physicsClientId=self.client)
-        print("[INFO] PyBullet client disconnected.")
 
     def reset(self):
         """Reset robot to initial position and reset CPG controllers."""
@@ -127,15 +118,14 @@ class UnitreeA1:
         Apply actions to CPGs to change the parameters.
         
         Args:
-            cpg_actions (numpy.array): Shape of (12,) 
-            [FR_amplitude, FR_frequency, FR_phase, FL_amplitude, FL_frequency, FL_phase, RR_amplitude, RR_frequency, RR_phase, RL_amplitude, RL_frequency, RL_phase]
+            cpg_actions (numpy.array): Shape of (4, 3) where each element contains [amplitude_delta, frequency_delta, phase_delta], in order of FR, FL, RR, RL.
         """
         # Ensure that cpg_actions has the correct shape
-        assert cpg_actions.shape == (12,), f"[ERROR] Invalid shape for cpg_actions. Expected (12,), got {cpg_actions.shape}"
+        assert cpg_actions.shape == (4, 3), f"[ERROR] Invalid shape for cpg_actions. Expected (4, 3), got {cpg_actions.shape}"
 
         leg_names = ["FR", "FL", "RR", "RL"]
         for i, leg_name in enumerate(leg_names):
-            amplitude_delta, frequency_delta, phase_delta = cpg_actions[i * 3: (i + 1) * 3]
+            amplitude_delta, frequency_delta, phase_delta = cpg_actions[i]
             # Update CPG parameters
             self.cpg_controllers[leg_name].update(amplitude_delta, frequency_delta, phase_delta)
 
