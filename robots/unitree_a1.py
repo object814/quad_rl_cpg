@@ -7,6 +7,7 @@ import pybullet_data
 import numpy as np
 import math
 
+import envs.config as cfg
 from controllers.cpg import CPG
 from animations.CPGAnimation import CPGAnimation
 
@@ -52,7 +53,7 @@ def inverse_kinematics_2d(x, y, L1=0.2, L2=0.2):
 
 
 class UnitreeA1:
-    def __init__(self, client, dt, model_pth="assets/a1_description/urdf/a1.urdf", fixed_base=False, reset_position=[0, 0, 0.5], debug=False, animate_cpg=True):
+    def __init__(self, client, dt=cfg.dt, model_pth="assets/a1_description/urdf/a1.urdf", fixed_base=cfg.fix_base, reset_position=cfg.reset_position, debug=cfg.debug, animate_cpg=cfg.animate_cpg):
         """
         Initialize Unitree A1 robot in PyBullet.
         

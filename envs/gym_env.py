@@ -5,6 +5,7 @@ from gym import spaces
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 
+from . import config as cfg
 from robots.unitree_a1 import UnitreeA1
 
 class Observations():
@@ -71,7 +72,7 @@ class UnitreeA1Env(gym.Env):
     The agent controls the amplitude, while phase and frequency are kept constant.
     """
     
-    def __init__(self, dt=0.01, render=True, debug=False, animate_cpg=True):
+    def __init__(self, dt=cfg.dt, render=cfg.render, debug=cfg.debug, animate_cpg=cfg.animate_cpg):
         """
         Initialize the Unitree A1 environment.
 
@@ -83,6 +84,7 @@ class UnitreeA1Env(gym.Env):
         super(UnitreeA1Env, self).__init__()
 
         self.debug = debug
+        self.payload_dropped = False
 
         # Initialize the Pybullet client with robot
         if render:
@@ -136,18 +138,16 @@ class UnitreeA1Env(gym.Env):
         """
         # Initialize tune-able params, reward weights
         # TODO: Set hyperparameters with config file
-        forward_progress_reward_weight = 1.0
-        roll_stability_penalty_weight = 1.0
-        pitch_stability_penalty_weight = 1.0
-        payload_drop_penalty_weight = 1.0
-        foot_slip_penalty_weight = 1.0
-        max_roll = 0.6 #In radians, around 34 degrees
-        min_roll = -0.6
-        max_pitch = 0.6
-        min_pitch = -0.6
-        discount_factor = 0.99
-        roll_pitch_range_without_penalty = 0.1745 #10 degrees
-        threashold = roll_pitch_range_without_penalty ** 2
+        forward_progress_reward_weight = cfg.forward_progress_reward_weight
+        roll_stability_penalty_weight = cfg.roll_stability_penalty_weight
+        pitch_stability_penalty_weight = cfg.pitch_stability_penalty_weight
+        payload_drop_penalty_weight = cfg.payload_drop_penalty_weight
+        foot_slip_penalty_weight = cfg.foot_slip_penalty_weight
+        max_roll = cfg.max_roll
+        min_roll = cfg.min_roll
+        max_pitch = cfg.max_pitch
+        min_pitch = cfg.min_pitch
+        threashold = cfg.roll_pitch_penalty_threashold
 
         # Extract the info from observations
         # ref_joint_positions = observation.joint_positions
@@ -173,6 +173,7 @@ class UnitreeA1Env(gym.Env):
         # Calculate the penalty for payload drop
         if roll < min_roll or roll > max_roll or pitch < min_pitch or pitch > max_pitch:
             payload_drop_penalty = 100 * payload_drop_penalty_weight
+            self.payload_dropped = True
         else:
             payload_drop_penalty = 0
         
@@ -196,6 +197,8 @@ class UnitreeA1Env(gym.Env):
         """
         Check if the episode is done.
         """
+        if self.payload_dropped==True:
+            return True
         return False
 
     def reset(self):
