@@ -27,3 +27,11 @@ max_pitch = 0.6                             # in radians, threashold for simulat
 min_pitch = -0.6                            # in radians, threashold for simulating weight dropped
 roll_pitch_range_without_penalty = 0.1745   #  in radians, range for robot base orientation in roll and pitch which won't be penalized
 roll_pitch_penalty_threashold = roll_pitch_range_without_penalty ** 2
+
+ # Added box params
+add_weight = True
+box_x_dim = 0.05
+box_y_dim = 0.05
+box_z_dim = 0.05
+box_mass = 1.0
+attach_link_id = 6 #Try 2 -> right forward sholder | 6 -> left forward sholder | 10 -> right back sholder | 14 -> left back sholder

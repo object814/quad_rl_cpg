@@ -53,7 +53,7 @@ def inverse_kinematics_2d(x, y, L1=0.2, L2=0.2):
 
 
 class UnitreeA1:
-    def __init__(self, client, dt=cfg.dt, model_pth="assets/a1_description/urdf/a1.urdf", fixed_base=cfg.fix_base, reset_position=cfg.reset_position, debug=cfg.debug, animate_cpg=cfg.animate_cpg):
+    def __init__(self, client, dt=cfg.dt, model_pth="assets/a1_description/urdf/a1.urdf", fixed_base=cfg.fix_base, reset_position=cfg.reset_position, debug=cfg.debug, animate_cpg=cfg.animate_cpg, add_weight=cfg.add_weight):
         """
         Initialize Unitree A1 robot in PyBullet.
         
@@ -82,6 +82,9 @@ class UnitreeA1:
 
         self.robot = p.loadURDF(model_pth, self.reset_position, useFixedBase=self.fixed_base, physicsClientId=self.client)
         self.plane = p.loadURDF("plane.urdf", physicsClientId=self.client)
+
+        if add_weight:
+            self.add_weight_to_robot()
 
         self.leg_names = LEG_NAMES
 
@@ -263,3 +266,32 @@ class UnitreeA1:
         Return the dimension of the action.
         """
         return 4 * 3  # 4 legs, 3 parameters per leg (amplitude, frequency, phase)
+    
+    def add_weight_to_robot(self):
+        box_half_extents = [cfg.box_x_dim, cfg.box_y_dim, cfg.box_z_dim]  # Size of the box
+        box_mass = cfg.box_mass  # Mass of the box in kg
+        box_visual_shape_id = p.createVisualShape(p.GEOM_BOX, halfExtents=box_half_extents)
+        box_collision_shape_id = p.createCollisionShape(p.GEOM_BOX, halfExtents=box_half_extents)
+
+        # Position the box above the robot's base
+        box_start_pos = [self.reset_position[0], self.reset_position[1], self.reset_position[2] + 0.5]
+        box_start_orientation = p.getQuaternionFromEuler([0, 0, 0])
+
+        box_id = p.createMultiBody(box_mass, box_collision_shape_id, box_visual_shape_id, box_start_pos, box_start_orientation)
+
+        # Attach the box to the robot, depending on the link we want to attach it to
+        base_link_id = cfg.attach_link_id
+        p.createConstraint(
+            parentBodyUniqueId=self.robot,
+            parentLinkIndex=base_link_id,
+            childBodyUniqueId=box_id,
+            childLinkIndex=-1,  # -1 means no child link
+            jointType=p.JOINT_FIXED,
+            jointAxis=[0, 0, 0],
+            parentFramePosition=[0, 0, 0.1],
+            childFramePosition=[0, 0, 0]
+        )
+
+        # Disable collision between the box and the robot to simulate the weight but avoid self-collisions
+        for link_index in range(p.getNumJoints(self.robot)):
+            p.setCollisionFilterPair(self.robot, box_id, link_index, -1, enableCollision=0)
