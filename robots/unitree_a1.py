@@ -53,7 +53,7 @@ def inverse_kinematics_2d(x, y, L1=0.2, L2=0.2):
 
 
 class UnitreeA1:
-    def __init__(self, client, dt=cfg.dt, model_pth="assets/a1_description/urdf/a1.urdf", fixed_base=cfg.fix_base, reset_position=cfg.reset_position, debug=cfg.debug, animate_cpg=cfg.animate_cpg, add_weight=cfg.add_weight):
+    def __init__(self, client, dt=cfg.dt, model_pth="assets/a1_description/urdf/a1.urdf", fixed_base=False, reset_position=cfg.reset_position, debug=False, animate_cpg=False, add_weight=cfg.add_weight):
         """
         Initialize Unitree A1 robot in PyBullet.
         

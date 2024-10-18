@@ -30,7 +30,7 @@ def test_unitree_a1():
     dt = cfg.dt
 
     # Initialize Environment
-    env = UnitreeA1Env(dt=dt, debug=cfg.debug, animate_cpg=False,)
+    env = UnitreeA1Env(dt=dt, debug=False, animate_cpg=False)
     env.reset()
 
     # Action space: [FR_amplitude, FR_frequency, FR_phase, FL_amplitude, FL_frequency, FL_phase, RR_amplitude, RR_frequency, RR_phase, RL_amplitude, RL_frequency, RL_phase]
