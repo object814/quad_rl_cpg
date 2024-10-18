@@ -263,7 +263,7 @@ class UnitreeA1Env(gym.Env):
             if done:
                 print("[DEBUG] Episode done")
 
-        # Addition info (optional)
+        # Addition info (optional - empty for now)
         info = {}
 
         return observation, reward, done, info
