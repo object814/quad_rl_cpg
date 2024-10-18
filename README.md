@@ -43,7 +43,7 @@ ME5418 Project: Quadruped Reinforcement Learning with Central Pattern Generators
    
    To run the Full Reward Test:
    ```bash
-   python3 -m scripts.test_reward
+   python3 -m scripts.test_rewards
    ```
 
 ---
