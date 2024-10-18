@@ -5,7 +5,7 @@ ME5418 Project: Quadruped Reinforcement Learning with Central Pattern Generators
 ## Environment Setup
 
 1. **Create Conda Environment**  
-   Open your Linux terminal and navigate to the project foler "quad_rl_cpg", run the following command to create the environment:
+   Open your Linux terminal and navigate to the project foler "quad_rl_cpg-main", run the following command to create the environment:
    ```bash
    conda env create -f environment.yml
    ```
