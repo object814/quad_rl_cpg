@@ -2,7 +2,7 @@ import pybullet as p
 import pybullet_data
 import numpy as np
 import time
-from envs.gym_env import UnitreeA1Env  # Assuming the environment is in unitree_a1_env.py
+from envs.gym_env import UnitreeA1Env  
 import matplotlib.pyplot as plt
 import envs.config as cfg
 
@@ -12,7 +12,7 @@ payload_drop_penalties = []
 foot_slip_penalties = []
 rewards = []
 
-#plt.ion()  # Turn on interactive mode
+plt.ion() 
 fig, ax = plt.subplots()
 line1, = ax.plot(forward_progress_rewards, label='Forward Progress Reward')
 line2, = ax.plot(roll_pitch_stability_penalties, label='Roll/Pitch Stability Penalty')
@@ -48,22 +48,22 @@ def test_unitree_a1():
         foot_slip_penalties.append(foot_slip_penalty)
         rewards.append(reward)
 
-        #line1.set_ydata(forward_progress_rewards)
-        #line1.set_xdata(range(len(forward_progress_rewards)))
-        #line2.set_ydata(roll_pitch_stability_penalties)
-        #line2.set_xdata(range(len(roll_pitch_stability_penalties)))
-        #line3.set_ydata(payload_drop_penalties)
-        #line3.set_xdata(range(len(payload_drop_penalties)))
-        #line4.set_ydata(foot_slip_penalties)
-        #line4.set_xdata(range(len(foot_slip_penalties)))
-        #line5.set_ydata(rewards)
-        #line5.set_xdata(range(len(rewards)))
-        #ax.relim()  # Recalculate limits
-        #ax.autoscale_view()  # Autoscale
-        #plt.draw()
-        #plt.pause(0.001)  # Pause to update the plot
+        line1.set_ydata(forward_progress_rewards)
+        line1.set_xdata(range(len(forward_progress_rewards)))
+        line2.set_ydata(roll_pitch_stability_penalties)
+        line2.set_xdata(range(len(roll_pitch_stability_penalties)))
+        line3.set_ydata(payload_drop_penalties)
+        line3.set_xdata(range(len(payload_drop_penalties)))
+        line4.set_ydata(foot_slip_penalties)
+        line4.set_xdata(range(len(foot_slip_penalties)))
+        line5.set_ydata(rewards)
+        line5.set_xdata(range(len(rewards)))
+        ax.relim()  
+        ax.autoscale_view()  
+        plt.draw()
+        plt.pause(0.001)  # Pause to update the plot
 
-        # Sleep to match the real-time visualization
+        
         time.sleep(dt)
 
         if done:
