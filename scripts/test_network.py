@@ -17,21 +17,27 @@ def test_network():
     dummy_observation = torch.randn(1, observation_dim, requires_grad=True)
     
     # Forward pass: sample action, log probabilities, and state value
+    # print with bold text
+    print("\033[1mTest Network Forward Pass\033[0m")
+
     actions, log_probs, state_value = model.act(dummy_observation)
-    print("\nForward Pass Completed Successfully.")
+    print("\nInput Observation:", dummy_observation)
     print("\nSampled Actions and Their Probabilities:")
     print("{:<5} | {:<15} | {:<10}".format("Dim", "Sampled Action", "Prob"))
     print("-" * 40)
     for dim in range(action_dim):
         log_prob = log_probs[0][dim].detach().numpy()
         action = actions[0][dim].detach().numpy()
-        prob = 1 / (1 + numpy.exp(-log_prob))
+        prob = numpy.exp(log_prob)
         action_str = "+1" if action == 1 else "-1"
         print("{:<5} | {:<15} | {:<10.4f}".format(dim+1, action_str, prob))
 
     print("\nState Value:", state_value.item())
+    print("\nForward pass completed successfully.\n")
     
     # Backward pass: compute gradients from a dummy loss
+    print("=" * 40)
+    print("\033[1mTest Network Backward Pass\033[0m")
     # For example, encourage higher log probabilities and higher state values
     dummy_loss = -torch.mean(log_probs) + torch.mean(state_value)
     print("\nDummy Loss:", dummy_loss.item())
