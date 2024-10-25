@@ -20,14 +20,32 @@ class Observations():
     - Foot velocities (4 legs)
     - Foot contacts (4 legs)
     """
-    def __init__(self):
-        self._joint_positions = []
-        self._joint_velocities = []
-        self._base_position = []
-        self._base_orientation = []
-        self._foot_velocities = []
-        self._foot_contacts = []
-    
+    def __init__(self, all_observations: np.ndarray = None):
+        """
+        Initialize with either a full observation numpy array or default empty attributes.
+
+        Args:
+            all_observations (np.ndarray, optional): Full observation array with shape (27,).
+        """
+        if all_observations is not None:
+            # Check input shape
+            assert all_observations.shape == (27,), f"[ERROR] Invalid observation shape. Expected (27,), got {all_observations.shape}"
+            # Extract observations
+            self._joint_positions = all_observations[:8]
+            self._joint_velocities = all_observations[8:16]
+            self._base_position = all_observations[16:19]
+            self._base_orientation = all_observations[19:23]
+            self._foot_velocities = all_observations[23:27]
+            self._foot_contacts = all_observations[27:]
+        else:
+            # Initialize empty lists if no array is provided
+            self._joint_positions = []
+            self._joint_velocities = []
+            self._base_position = []
+            self._base_orientation = []
+            self._foot_velocities = []
+            self._foot_contacts = []
+        
     def update(self, joint_positions, joint_velocities, base_position, base_orientation, foot_velocities, foot_contacts):
         self._joint_positions = joint_positions
         self._joint_velocities = joint_velocities
@@ -96,7 +114,8 @@ class UnitreeA1Env(gym.Env):
         self.robot = UnitreeA1(client=client_id, dt=dt, debug=debug, animate_cpg=animate_cpg, fixed_base=fixed_base)
 
         # Action space: 12 actions, each can be -1 (decrease) or 1 (increase)
-        self.action_space = spaces.Box(low=-1, high=1, shape=(12,), dtype=np.int8)
+        action_dim = self.robot.get_action_dimension()
+        self.action_space = spaces.Box(low=-1, high=1, shape=(action_dim,), dtype=np.int8)
 
         # Observation space: Concatenated robot observations
         obs_dim = self.robot.get_observation_dimension()
@@ -114,17 +133,21 @@ class UnitreeA1Env(gym.Env):
     def _observe(self):
         """
         Get the current observation from the simulation.
+
+        Returns:
+            observation (np.array): The current observation.
         """
         joint_positions, joint_velocities, base_position, base_orientation, foot_velocities, foot_contacts = self.robot.get_observation()
         self.observation.update(joint_positions, joint_velocities, base_position, base_orientation, foot_velocities, foot_contacts)
-        return self.observation
+        return self.observation.all_observations
     
-    def _get_reward(self, observation: Observations, full_reward=False):
+    def _get_reward(self, observation=None, full_reward=False):
         """
         Calculate the reward based on the observation.
 
         Args:
-            observation (Observations): The current observation.
+            observation (array or Observations): The current observation. Accepts either the full Observations instance
+                                                 or a flattened array of all observations.
             full_reward (bool): Whether to return the full reward components.
 
         Returns:
@@ -138,6 +161,13 @@ class UnitreeA1Env(gym.Env):
             foot_slip_penalty (float): Penalty for foot slip
 
         """
+        # If `observation` is None, use the environment's current observation
+        if observation is None:
+            observation = self.observation
+        # If observation is an array, convert it to an Observations instance
+        if isinstance(observation, np.ndarray):
+            observation = Observations(observation) # Initialize from array
+
         # Initialize tune-able params, reward weights
         # TODO: Set hyperparameters with config file
         forward_progress_reward_weight = cfg.forward_progress_reward_weight
@@ -253,7 +283,7 @@ class UnitreeA1Env(gym.Env):
         observation = self._observe()
 
         # Get the reward
-        reward = self._get_reward(observation)
+        reward = self._get_reward()
 
         # Check if the episode is done
         done = self._done()
@@ -290,7 +320,7 @@ class UnitreeA1Env(gym.Env):
         observation = self._observe()
 
         # Calculate the reward
-        reward, forward_progress_reward, roll_pitch_stability_penalty, payload_drop_penalty, foot_slip_penalty = self._get_reward(observation, full_reward=True)
+        reward, forward_progress_reward, roll_pitch_stability_penalty, payload_drop_penalty, foot_slip_penalty = self._get_reward(full_reward=True)
 
         # Check if the episode is done
         done = self._done()
