@@ -46,6 +46,21 @@ ME5418 Project: Quadruped Reinforcement Learning with Central Pattern Generators
    python3 -m scripts.test_rewards
    ```
 
+### 4. **Neural Network Test**  
+   Simulates the robot with a weight block added, and each reward/penalty is plotted separately.  
+
+
+
+### 5. **Forward process/Back propagation test with PPO losses**  
+   Agent goes through 10 roll outs with 100 timestpes each, with a randomized action selection. Then back propagates through the collected data 100 epochs calculating the PPO loses.   
+
+   
+   To run the forward/back propagation test with PPO loss calculation:
+   ```bash
+   python3 -m scripts.test_network_training_with_PPOloss
+   ```
+
+
 ---
 
 ## Configuration Options
