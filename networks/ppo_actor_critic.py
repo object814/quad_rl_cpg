@@ -150,7 +150,7 @@ def ppo_loss(log_probs, old_log_probs, advantages, values, returns, entropy, eps
     # Clipped objective
     clipped_ratio = torch.clamp(ratio, 1 - epsilon, 1 + epsilon)
     policy_loss = -torch.min(ratio * advantages, clipped_ratio * advantages).mean()
-    
+    values = values.flatten()
     # Value loss
     value_loss = F.mse_loss(values, returns)
 
