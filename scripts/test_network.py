@@ -55,5 +55,17 @@ def test_network():
     
     print("\nBackward pass completed successfully.\n")
 
+    # Export the model to ONNX format (to visualize using Netron (https://netron.app/))
+    torch.onnx.export(
+        model, 
+        dummy_observation, 
+        "networks/ppo_actor_critic.onnx", 
+        input_names=["observation"], 
+        output_names=["Output_Actor_Net", "Output_Critic_Net"],
+        opset_version=11
+    )
+    print("Model exported to ONNX format as 'ppo_actor_critic.onnx'")
+    
+
 if __name__ == "__main__":
     test_network()

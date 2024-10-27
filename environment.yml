@@ -1,4 +1,4 @@
-name: rl-cpg
+name: group-21-rl-cpg
 channels:
   - defaults
 dependencies:
@@ -53,10 +53,12 @@ dependencies:
       - nvidia-nccl-cu12==2.20.5
       - nvidia-nvjitlink-cu12==12.6.77
       - nvidia-nvtx-cu12==12.1.105
+      - onnx==1.17.0
       - opencv-python==4.6.0.66
       - packaging==24.1
       - pandas==1.5.2
       - pillow==10.4.0
+      - protobuf==5.28.3
       - pybullet==3.2.5
       - pyparsing==3.1.4
       - python-dateutil==2.9.0.post0
@@ -68,4 +70,4 @@ dependencies:
       - torch==2.4.1
       - triton==3.0.0
       - typing-extensions==4.12.2
-prefix: /home/haoyu/anaconda3/envs/rl-cpg
+prefix: /home/carloshdezm/anaconda3/envs/rl-cpg
