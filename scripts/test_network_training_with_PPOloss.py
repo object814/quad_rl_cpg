@@ -40,18 +40,21 @@ def generate_rollout_data(env, model, rollout_steps=100, num_rollouts=10, gamma=
     observations = torch.tensor(np.array(observations, dtype=np.float32), dtype=torch.float32)
     actions = torch.tensor(np.array(actions, dtype=np.float32), dtype=torch.float32)
     state_values = torch.tensor(np.array(state_values, dtype=np.float32), dtype=torch.float32)
+    #print(f"State values shape: {state_values.shape}") # For debugging
     log_probs = torch.tensor(np.array(log_probs, dtype=np.float32), dtype=torch.float32)
     rewards = torch.tensor(np.array(rewards, dtype=np.float32), dtype=torch.float32)
     
     # Compute advantages and returns
     advantages = compute_advantages(rewards, state_values, gamma=gamma)
+    #print(f"Advantages shape: {advantages.shape}") # For debugging
     returns = advantages + state_values.numpy()
+    #print(f"Returns shape: {returns.shape}") # For debugging
 
     # Convert advantages and returns to tensors
     advantages = torch.tensor(advantages, dtype=torch.float32).unsqueeze(-1).expand_as(actions)
     returns = torch.tensor(returns, dtype=torch.float32)
 
-    print("[INFO] Rollout data generation complete.\n")
+    #print("[INFO] Rollout data generation complete.\n")
     return observations, actions, log_probs, state_values, advantages, returns
 
 
@@ -61,11 +64,15 @@ def train_ppo_network(model, data_loader, epochs=100, epsilon=0.2):
     
     for epoch in range(epochs):
         total_loss = 0
+        batch_idx = 0
         for batch in data_loader:
             observations, actions, old_log_probs, state_values, advantages, returns = batch
+            batch_idx += 1
 
             # Forward pass through the network
             log_probs, entropy, predicted_state_values = model.evaluate_actions(observations, actions)
+            #print(f"predicted_state_values shape: {predicted_state_values.shape}") # For debugging
+
 
             # Compute PPO loss
             loss = ppo_loss(log_probs, old_log_probs, advantages, predicted_state_values, returns, entropy ,epsilon)
@@ -73,6 +80,12 @@ def train_ppo_network(model, data_loader, epochs=100, epsilon=0.2):
             # Backward pass and optimization step
             optimizer.zero_grad()
             loss.backward()
+
+            print(f"Epoch {epoch + 1} | Batch {batch_idx}")
+            for name, param in model.named_parameters():
+                if param.grad is not None:
+                    print(f"Layer: {name} | Gradient Norm: {param.grad.norm()}")
+
             optimizer.step()
 
             total_loss += loss.item()
