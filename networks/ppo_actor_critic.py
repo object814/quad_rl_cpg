@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import numpy as np
 
 class PPOActorCritic(nn.Module):
     def __init__(self, observation_dim, action_dim, hidden_size=256):
@@ -126,3 +127,33 @@ class PPOActorCritic(nn.Module):
         log_probs = dist.log_prob(actions_binary)
         entropy = dist.entropy()
         return log_probs, entropy, state_values
+
+
+def compute_advantages(rewards, state_values, gamma=0.99, lam=0.95):
+    advantages = np.zeros_like(rewards)
+    last_gae_lam = 0
+    for t in reversed(range(len(rewards))):
+        if t == len(rewards) - 1:
+            next_value = state_values[t]
+        else:
+            next_value = state_values[t + 1]
+        delta = rewards[t] + gamma * next_value - state_values[t]
+        advantages[t] = last_gae_lam = delta + gamma * lam * last_gae_lam
+    return advantages
+
+def ppo_loss(log_probs, old_log_probs, advantages, values, returns, entropy, epsilon=0.2):
+
+    # Calculate ratio
+    ratio = torch.exp(log_probs - old_log_probs)
+    
+    
+    # Clipped objective
+    clipped_ratio = torch.clamp(ratio, 1 - epsilon, 1 + epsilon)
+    policy_loss = -torch.min(ratio * advantages, clipped_ratio * advantages).mean()
+    
+    # Value loss
+    value_loss = F.mse_loss(values, returns)
+
+    # Total loss
+    total_loss = policy_loss + 0.5 * value_loss - 0.01 * entropy.mean()  # 0.5 is a scaling factor for value loss
+    return total_loss

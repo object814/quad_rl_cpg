@@ -7,7 +7,7 @@ dt = 0.01                                   # Time step for updating the CPG sta
 # render = True                               # Whether to render the simulation
 # debug = False                               # Whether to enable debug mode
 # animate_cpg = True                          # Whether to animate the CPGs
-discount_factor = 0.99                      # Discount factor per timestep for total rewards
+discount_factor = 1.0                      # Discount factor per timestep for total rewards
 # fixed_base = False                          # Whether to fix the base of the robot
 reset_position = [0, 0, 0.4]                # Initial position of the robot
 
