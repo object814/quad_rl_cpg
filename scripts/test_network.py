@@ -6,7 +6,7 @@ def test_network():
     """
     Demonstrates a forward and backward pass using the PPOActorCritic network.
     """
-    # Define observation and action dimensions based on your environment
+    # Define observation and action dimensions according to our environment.
     observation_dim = 23
     action_dim = 12
     
