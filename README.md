@@ -13,7 +13,7 @@ ME5418 Project - Group 21: Quadruped Reinforcement Learning with Central Pattern
 2. **Activate Conda Environment**  
    Once the environment is created, activate it:
    ```bash
-   conda activate rl-cpg
+   conda activate group-21-rl-cpg
    ```
 ---
 ## Neural Network - Running Tests
