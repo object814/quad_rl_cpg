@@ -99,7 +99,7 @@ class PPOActorCritic(nn.Module):
         probs = actor_logits
         dist = torch.distributions.Bernoulli(probs)
         action_sample = dist.sample()
-        log_probs = dist.log_prob(action_sample)
+        log_probs = dist.log_prob(action_sample).sum(dim=1)  # Sum over action dimensions
         
         # Convert sampled actions from {0,1} to {-1, +1}
         actions = 2 * action_sample - 1
@@ -124,7 +124,7 @@ class PPOActorCritic(nn.Module):
         dist = torch.distributions.Bernoulli(probs) # bernoulli distribution for each action dimension based on current probabilities
         # Convert actions from {-1, +1} to {0, 1} for probability computation
         actions_binary = (actions + 1) / 2
-        log_probs = dist.log_prob(actions_binary)
+        log_probs = dist.log_prob(actions_binary).sum(dim=1)  # Sum over action dimensions
         entropy = dist.entropy()
         return log_probs, entropy, state_values
 
