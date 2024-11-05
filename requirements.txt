@@ -6,3 +6,4 @@ gym==0.26.2
 stable-baselines3==2.3.2
 pybullet==3.2.5
 opencv-python==4.6.0.66
+tensorboard==2.18.0
