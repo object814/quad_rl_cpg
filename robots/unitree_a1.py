@@ -72,6 +72,7 @@ class UnitreeA1:
         self.reset_position = reset_position
         self.debug = debug
         self.animate_cpg = animate_cpg
+        self.box_id = None
 
         p.setTimeStep(dt, physicsClientId=self.client)
         p.setGravity(0, 0, -9.81, physicsClientId=self.client)
@@ -83,8 +84,7 @@ class UnitreeA1:
         self.robot = p.loadURDF(model_pth, self.reset_position, useFixedBase=self.fixed_base, physicsClientId=self.client)
         self.plane = p.loadURDF("plane.urdf", physicsClientId=self.client)
 
-        if add_weight:
-            self.add_weight_to_robot()
+   
 
         self.leg_names = LEG_NAMES
 
@@ -127,9 +127,13 @@ class UnitreeA1:
         for leg in self.cpg_controllers:
             self.cpg_controllers[leg].reset()
 
+        self.add_virtual_weight() #Initiaize the virtual weight at different location every episode reset
+
     def step(self):
         """Step the simulation."""
+        self.apply_virtual_weight_force() #Apply the force everytime step
         p.stepSimulation(physicsClientId=self.client)
+        
 
     def apply_cpg_action(self, cpg_actions):
         """
@@ -267,31 +271,35 @@ class UnitreeA1:
         """
         return 4 * 3  # 4 legs, 3 parameters per leg (amplitude, frequency, phase)
     
-    def add_weight_to_robot(self):
-        box_half_extents = [cfg.box_x_dim, cfg.box_y_dim, cfg.box_z_dim]  # Size of the box
-        box_mass = cfg.box_mass  # Mass of the box in kg
-        box_visual_shape_id = p.createVisualShape(p.GEOM_BOX, halfExtents=box_half_extents)
-        box_collision_shape_id = p.createCollisionShape(p.GEOM_BOX, halfExtents=box_half_extents)
+    def add_virtual_weight(self):
+        """
+        Set up a virtual weight by defining a force vector that will be applied to the robot.
+        This force simulates the effect of an added mass without a physical box.
+        """
+        # Define a random mass for the virtual weight (between 0.5 and 2 kg)
+        box_mass = np.random.uniform(0.5, 1.5)
+        # box_mass = 2 #For testing virtual force
+        self.virtual_force = None
+        self.weight_application_link = None
 
-        # Position the box above the robot's base
-        box_start_pos = [self.reset_position[0], self.reset_position[1], self.reset_position[2] + 0.5]
-        box_start_orientation = p.getQuaternionFromEuler([0, 0, 0])
+        # Calculate the force vector for gravity in the z-direction
+        gravity = -9.81  # Gravity acceleration (m/s^2)
+        self.virtual_force = [0, 0, box_mass * gravity]  # Force vector to simulate weight
 
-        box_id = p.createMultiBody(box_mass, box_collision_shape_id, box_visual_shape_id, box_start_pos, box_start_orientation)
+        # Choose a random link on the robot to apply this force
+        self.weight_application_link = np.random.choice([2, 6, 10, 14])
 
-        # Attach the box to the robot, depending on the link we want to attach it to
-        base_link_id = cfg.attach_link_id
-        p.createConstraint(
-            parentBodyUniqueId=self.robot,
-            parentLinkIndex=base_link_id,
-            childBodyUniqueId=box_id,
-            childLinkIndex=-1,  # -1 means no child link
-            jointType=p.JOINT_FIXED,
-            jointAxis=[0, 0, 0],
-            parentFramePosition=[0, 0, 0.1],
-            childFramePosition=[0, 0, 0]
-        )
+    def apply_virtual_weight_force(self):
+        """
+        Apply the virtual weight as an external force at each step.
+        This function should be called every simulation step to maintain the weight's effect.
+        """
+        if self.virtual_force is not None and self.weight_application_link is not None:
+            p.applyExternalForce(
+                objectUniqueId=self.robot,
+                linkIndex=self.weight_application_link,
+                forceObj=self.virtual_force,
+                posObj=[0, 0, 0],  # Apply at the origin of the specified link
+                flags=p.LINK_FRAME  # Apply force in the link's local frame
+            )
 
-        # Disable collision between the box and the robot to simulate the weight but avoid self-collisions
-        for link_index in range(p.getNumJoints(self.robot)):
-            p.setCollisionFilterPair(self.robot, box_id, link_index, -1, enableCollision=0)
