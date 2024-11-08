@@ -72,7 +72,6 @@ class UnitreeA1:
         self.reset_position = reset_position
         self.debug = debug
         self.animate_cpg = animate_cpg
-        self.box_id = None
 
         p.setTimeStep(dt, physicsClientId=self.client)
         p.setGravity(0, 0, -9.81, physicsClientId=self.client)
