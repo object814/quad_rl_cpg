@@ -16,6 +16,33 @@ ME5418 Project - Group 21: Quadruped Reinforcement Learning with Central Pattern
    conda activate group-21-rl-cpg
    ```
 ---
+## Learning Agent - Running Tests
+### 1. **Test Agent (`scripts/test_agent.py`)**
+   Test of our learning agent using Policy Optimization (PPO). The agent (UnitreeA1 quadruped robot) interacts with our gym environment (UnitreeA1Env) and performs actions based on our neural network policy (PPOActorCritic). For learning, PPO loss function with clipped surrogate objective is used to optimize the policy and value function. Since this is for testing only, the agent is trained over just 10 episodes, with 1000 timesteps per episode. The agent collects experience for 100 timesteps per rollout and updates its policy through 10 epochs per rollout. The training progress is logged using TensorBoard.
+
+   Run the test:
+
+   #### 1.1 Launch Tensorboard ####
+
+   ```bash
+   tensorboard --logdir=runs/ppo_training
+   ```
+   This will:
+   * Start a TensorBoard local web server (usually at http://localhost:6006).
+   * Read the log files that `test_agent.py` store in `runs/ppo_training` directory.
+
+   Note: You may get the following message: "TensorFlow installation not found - running with reduced feature set." This is not a problem. You can continue with the next step.
+
+   #### 1.2 Open TensorBoard in your browser ####
+   Open in your browser the address where the TensorBoard local web server was launched (usually http://localhost:6006).     
+
+   #### 1.3 Run the Agent Test ####
+   ```bash
+   python3 -m scripts.test_agent
+   ```
+
+
+---
 ## Neural Network - Running Tests
 
 ### 1. **Single observation: forward pass + backward pass (`scripts/test_network.py`)**
