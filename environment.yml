@@ -25,17 +25,20 @@ dependencies:
   - xz=5.4.6=h5eee18b_1
   - zlib=1.2.13=h5eee18b_1
   - pip:
+      - absl-py==2.1.0
       - cloudpickle==3.0.0
       - cycler==0.12.1
       - farama-notifications==0.0.4
       - filelock==3.16.1
       - fonttools==4.54.1
       - fsspec==2024.9.0
+      - grpcio==1.67.1
       - gym==0.26.2
       - gym-notices==0.0.8
       - gymnasium==0.29.1
       - jinja2==3.1.4
       - kiwisolver==1.4.7
+      - markdown==3.7
       - markupsafe==3.0.1
       - matplotlib==3.5.3
       - mpmath==1.3.0
@@ -67,7 +70,10 @@ dependencies:
       - six==1.16.0
       - stable-baselines3==2.3.2
       - sympy==1.13.3
+      - tensorboard==2.18.0
+      - tensorboard-data-server==0.7.2
       - torch==2.4.1
       - triton==3.0.0
       - typing-extensions==4.12.2
-prefix: /home/carloshdezm/anaconda3/envs/rl-cpg
+      - werkzeug==3.1.2
+prefix: /home/carloshdezm/anaconda3/envs/group-21-rl-cpg
