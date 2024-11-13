@@ -24,7 +24,8 @@ LEG_NAMES = ["FR", "FL", "RR", "RL"] # Leg names
 # Inverse kinematics for each leg
 def inverse_kinematics_2d(x, y, L1=0.2, L2=0.2):
     """
-    Calculate the inverse kinematics for a 2-joint planar robot.
+    Calculate the inverse kinematics for a 2-joint planar robot with joint limits,
+    accounting for opposite joint directions.
 
     Parameters:
     x, y : float
@@ -37,17 +38,40 @@ def inverse_kinematics_2d(x, y, L1=0.2, L2=0.2):
         The joint angles (in radians) for joint 1 and joint 2.
     """
 
+    # Setup joint limits for reversed configuration
+    theta1_min, theta1_max = -1.047, 4.189  # Thigh joint limits
+    theta2_min, theta2_max = -2.697, -0.916  # Calf joint limits
+
+    # Compute distance from base to end-effector
     r = math.sqrt(x ** 2 + y ** 2)
     if r > L1 + L2:
         raise ValueError("Target position is out of reach.")
 
+    # Calculate theta2 using the law of cosines, with reversal adjustment
     cos_theta2 = (r ** 2 - L1 ** 2 - L2 ** 2) / (2 * L1 * L2)
     cos_theta2 = min(1.0, max(-1.0, cos_theta2))  # Numerical stability
-    theta2 = math.acos(cos_theta2)
-
+    theta2 = -(math.acos(cos_theta2))  # Flip direction of theta2
+    
+    # Calculate theta1 with consideration of opposite direction
     k1 = L1 + L2 * cos_theta2
-    k2 = L2 * math.sin(theta2)
-    theta1 = math.atan2(y, x) - math.atan2(k2, k1)
+    k2 = L2 * math.sin(-theta2)  # Reflect angle for opposite orientation
+    theta1 = math.atan2(y, x) + math.atan2(k2, k1)  # Adjusted for opposite direction
+
+    theta1 = theta1 + (math.pi / 2)
+
+    # Apply joint limits
+    if theta1 < theta1_min:
+        print(f"Joint 1 angle {theta1} out of min range. Setting to min {theta1_min}")
+        theta1 = theta1_min
+    elif theta1 > theta1_max:
+        print(f"Joint 1 angle {theta1} out of max range. Setting to max {theta1_max}")
+        theta1 = theta1_max
+    if theta2 < theta2_min:
+        print(f"Joint 2 angle {theta2} out of min range. Setting to min {theta2_min}")
+        theta2 = theta2_min
+    elif theta2 > theta2_max:
+        print(f"Joint 2 angle {theta2} out of max range. Setting to max {theta2_max}")
+        theta2 = theta2_max
 
     return theta1, theta2
 
@@ -166,6 +190,9 @@ class UnitreeA1:
         # Calculate the joint angles using inverse kinematics
         joint_angles = self.compute_joint_angles(target_positions)
 
+        #print("DEBUG, this is joint_angles")
+        #print(joint_angles)
+
         # Apply the joint positions using position control
         self.apply_joint_positions(joint_angles)
         self.step()
@@ -185,8 +212,9 @@ class UnitreeA1:
         joint_angles = {}
         for leg_name, (x, z) in target_positions.items():
             # Transform the target position to the local frame of the leg
-            x_, z_ = -z, -x
-            thigh_angle, calf_angle = inverse_kinematics_2d(x_, z_)
+            x_, z_ = x, z
+            #x_, z_ = -z, -x
+            thigh_angle, calf_angle = inverse_kinematics_2d(x_, z_)  # Adjust for the initial orientation of the leg
             joint_angles[leg_name] = (thigh_angle, calf_angle)
         return joint_angles
     
