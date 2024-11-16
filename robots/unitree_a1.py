@@ -107,8 +107,6 @@ class UnitreeA1:
         self.robot = p.loadURDF(model_pth, self.reset_position, useFixedBase=self.fixed_base, physicsClientId=self.client)
         self.plane = p.loadURDF("plane.urdf", physicsClientId=self.client)
 
-   
-
         self.leg_names = LEG_NAMES
 
         if self.animate_cpg:
@@ -127,12 +125,27 @@ class UnitreeA1:
             p.getJointInfo(self.robot, i, physicsClientId=self.client)[8:10] for i in self.controlled_joint_indices
         ]
         self.num_controlled_joints = len(self.controlled_joint_indices)
+
+        # Set friction coefficients for the ground plane and robot's feet
+        self._set_friction()
+        
         self.reset()
 
     def __del__(self):
         """Close the PyBullet client."""
         p.disconnect(physicsClientId=self.client)
         print("[INFO] PyBullet client disconnected.")
+
+    def _set_friction(self):
+        """
+        Set friction coefficients for the ground plane and robot's feet.
+        """
+        # Set friction for the ground plane
+        p.changeDynamics(self.plane, -1, lateralFriction=1.0, spinningFriction=0.1, rollingFriction=0.1, physicsClientId=self.client)
+
+        # Set friction for each foot link
+        for foot_link_index in self.end_effector_indices:
+            p.changeDynamics(self.robot, foot_link_index, lateralFriction=1.0, spinningFriction=0.1, rollingFriction=0.1, physicsClientId=self.client)
 
     def reset(self):
         """Reset robot to initial position and reset CPG controllers."""
