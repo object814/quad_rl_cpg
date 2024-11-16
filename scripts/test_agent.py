@@ -92,6 +92,11 @@ class LearningAgent:
         '''
         Update the network using the collected episode data.
         '''
+        MIN_EPISODE_LENGTH = 10  # Set a minimum length for updates
+        if len(self.episode_buffer) < MIN_EPISODE_LENGTH:
+            print("Episode buffer too small to update network.")
+            return  # Skip the update
+        
         # Prepare data from episode buffer
         observations = torch.stack([torch.tensor(item['obs'], dtype=torch.float32) for item in self.episode_buffer])
         actions = torch.stack([item['action'] for item in self.episode_buffer])
