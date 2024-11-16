@@ -41,7 +41,7 @@ class CPG:
             h (float): Robot height.
             gc (float): Maximum swing height.
         """
-        self.d_step=0.1
+        self.d_step=0.08
         self.h=0.35
         self.gc=0.05
 
