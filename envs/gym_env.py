@@ -7,6 +7,8 @@ from scipy.spatial.transform import Rotation as R
 
 from . import config as cfg
 from robots.unitree_a1 import UnitreeA1
+from .reward_normalization import RewardNormalizer
+from .observation_normalization import ObservationNormalizer
 
 class Observations():
     """
@@ -122,6 +124,12 @@ class UnitreeA1Env(gym.Env):
         self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(obs_dim,), dtype=np.float32)
         self.observation = Observations() # Custom observation class
 
+        # Initialize RewardNormalizer
+        self.reward_normalizer = RewardNormalizer()
+
+        # Initialize ObservationNormalizer
+        self.observation_normalizer = ObservationNormalizer(obs_dim)
+
     def _act(self, action):
         """
         Apply action to the robot in the simulation and step simulation.
@@ -139,6 +147,10 @@ class UnitreeA1Env(gym.Env):
         """
         joint_positions, joint_velocities, base_position, base_orientation, foot_velocities, foot_contacts = self.robot.get_observation()
         self.observation.update(joint_positions, joint_velocities, base_position, base_orientation, foot_velocities, foot_contacts)
+        
+        # Normalize the observation
+        # normalized_observations = self.observation_normalizer.normalize(self.observation.all_observations)
+        # return normalized_observations
         return self.observation.all_observations
     
     def _get_reward(self, observation=None, full_reward=False):
@@ -220,6 +232,14 @@ class UnitreeA1Env(gym.Env):
         
         # Calculate the total reward
         reward = forward_progress_reward - roll_pitch_stability_penalty - payload_drop_penalty - foot_slip_penalty
+
+        # Normalize the reward
+        # normalized_reward = self.reward_normalizer.normalize(reward)
+        # if full_reward:
+        #     return normalized_reward, forward_progress_reward, roll_pitch_stability_penalty, payload_drop_penalty, foot_slip_penalty
+        # else:
+        #     return normalized_reward
+
         if full_reward:
             return reward, forward_progress_reward, roll_pitch_stability_penalty, payload_drop_penalty, foot_slip_penalty
         else:
@@ -267,11 +287,11 @@ class UnitreeA1Env(gym.Env):
         """
         # Clip the action values to -1 or 1 with integer type
         action = np.array(action, dtype=np.int8)
-        for a in action:
-            if a < 0:
-                a = -1 # decrease
+        for i in range(len(action)):
+            if action[i] < 0:
+                action[i] = -1  # decrease
             else:
-                a = 1 # increase
+                action[i] = 1  # increase
 
         # Check action shape
         assert action.shape == (12,), f"[ERROR] Invalid action shape. Expected (12,), got {action.shape}"
