@@ -5,7 +5,7 @@ Implementation for CPG controller for robot leg tip trajectory generation.
 import numpy as np
 
 class CPG:
-    def __init__(self, dt, amplitude=0.01, frequency=5.0, phase=0.0, debug=False):
+    def __init__(self, dt, phase, amplitude=0.01, frequency=5.0, debug=False):
         """
         Initialize CPG parameters for a single leg.
 
@@ -29,9 +29,9 @@ class CPG:
 
         # Define parameter limits (TODO: adjust as necessary)
         self.amplitude_min = 0.05
-        self.amplitude_max = 0.3
+        self.amplitude_max = 0.35
         self.frequency_min = 0.5
-        self.frequency_max = 2.5
+        self.frequency_max = 15
         self.phase_min = -np.pi
         self.phase_max = np.pi
 
@@ -41,15 +41,15 @@ class CPG:
             h (float): Robot height.
             gc (float): Maximum swing height.
         """
-        self.d_step=0.08
-        self.h=0.35
-        self.gc=0.05
+        self.d_step=0.175
+        self.h=0.30
+        self.gc=0.10
 
         if self.debug:
             print(f"[DEBUG] Initialized CPG with amplitude: {amplitude}, frequency: {frequency}, phase: {phase}")
 
 
-    def reset(self, amplitude=0.01, frequency=5.0, phase=0.0):
+    def reset(self, phase, amplitude=0.01, frequency=5.0):
         """
         Reset the CPG parameters to their initial values.
 
@@ -80,6 +80,22 @@ class CPG:
         Returns:
             tuple: Desired foot position (x, z).    
         """
+
+
+        #print("(update CPG) BEFORE adding deltas: ")
+        #print(f"Deltas: {amplitude_delta}, {frequency_delta}, {phase_delta}")
+        #print(f"Amplitude: {self.amplitude}")
+        #print(f"Frequency: {self.frequency}")
+        #print(f"Phase: {self.phase}")
+        #print("--------------------------")
+
+        # Adjust deltas (to 1% of the full range)
+        # Originally deltas are just 1 or -1. Here we adjust to
+        # +-1% or the whole range.
+        amplitude_delta = amplitude_delta * ((self.amplitude_max - self.amplitude_min) *0.01)
+        frequency_delta = frequency_delta * ((self.frequency_max - self.frequency_min) *0.01)
+        phase_delta = phase_delta * ((self.phase_max - self.phase_min) *0.01)
+
         self.amplitude = np.clip(self.amplitude + amplitude_delta, self.amplitude_min, self.amplitude_max)
         self.frequency = np.clip(self.frequency + frequency_delta, self.frequency_min, self.frequency_max)
         self.phase += phase_delta
@@ -87,6 +103,14 @@ class CPG:
 
         if self.debug:
             print(f"[DEBUG] CPG updated - amplitude: {self.amplitude}, frequency: {self.frequency}, phase: {self.phase}")
+
+
+        #print("(update CPG) AFTER adding deltas: ")
+        #print(f"Amplitude: {self.amplitude}")
+        #print(f"Frequency: {self.frequency}")
+        #print(f"Phase: {self.phase}")
+        #print("--------------------------")
+        #print("--------------------------")
 
         # Update amplitude using dynamic equation
         convergence_rate = 10.0  # Coefficient to control convergence speed

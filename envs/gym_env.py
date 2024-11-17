@@ -288,7 +288,7 @@ class UnitreeA1Env(gym.Env):
         # Clip the action values to -1 or 1 with integer type
         action = np.array(action, dtype=np.int8)
         for i in range(len(action)):
-            if action[i] < 0:
+            if action[i] <= 1e8:
                 action[i] = -1  # decrease
             else:
                 action[i] = 1  # increase
