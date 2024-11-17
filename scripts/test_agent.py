@@ -16,7 +16,7 @@ class LearningAgent:
         self.epsilon = 0.2
         self.entropy_coef = 0.01
         # Training hyperparameters
-        self.max_timestep = 1000
+        self.max_timestep = 10000
         self.rollout_steps = 100
         self.epochs = 10 # Number of epochs per update
         self.episode_num = 10 # Number of episodes to run

@@ -114,7 +114,19 @@ class UnitreeA1:
             self.animation = CPGAnimation(self.leg_names)
 
         # Create a CPG controller for each leg with debug flag
-        self.cpg_controllers = {leg_name: CPG(dt=self.dt, debug=self.debug) for leg_name in self.leg_names}
+        #self.cpg_controllers = {leg_name: CPG(dt=self.dt, debug=self.debug) for leg_name in self.leg_names}
+        self.cpg_controllers = {}
+        #self.cpg_controllers["FR"] = CPG(dt=self.dt, debug=self.debug, phase = 0)
+        #self.cpg_controllers["FL"] = CPG(dt=self.dt, debug=self.debug, phase = 0)
+        #self.cpg_controllers["RR"] = CPG(dt=self.dt, debug=self.debug, phase = 0)
+        #self.cpg_controllers["RL"] = CPG(dt=self.dt, debug=self.debug, phase = 0)
+        
+
+        self.cpg_controllers["FR"] = CPG(dt=self.dt, debug=self.debug, phase =  np.pi/2)
+        self.cpg_controllers["FL"] = CPG(dt=self.dt, debug=self.debug, phase = -np.pi/2)
+        self.cpg_controllers["RR"] = CPG(dt=self.dt, debug=self.debug, phase =  np.pi/2)
+        self.cpg_controllers["RL"] = CPG(dt=self.dt, debug=self.debug, phase = -np.pi/2)
+
 
         # Initialize joint and link indices
         self.controlled_joint_indices = CONTROLLER_JOINT_INDICES
@@ -160,8 +172,13 @@ class UnitreeA1:
             p.resetJointState(self.robot, i, 0, 0, physicsClientId=self.client)
 
         # Reset CPG controllers
-        for leg in self.cpg_controllers:
-            self.cpg_controllers[leg].reset()
+        #for leg in self.cpg_controllers:
+        #    self.cpg_controllers[leg].reset(phase = 0)
+        self.cpg_controllers["FR"].reset(phase =  np.pi/2)
+        self.cpg_controllers["FL"].reset(phase = -np.pi/2)
+        self.cpg_controllers["RR"].reset(phase =  np.pi/2)
+        self.cpg_controllers["RL"].reset(phase = -np.pi/2)
+        
 
         self.add_virtual_weight() #Initiaize the virtual weight at different location every episode reset
 
