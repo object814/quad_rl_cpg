@@ -1,5 +1,8 @@
 temp/*
 runs/*
+networks/saved_*
+networks/img_export/*
+logs/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
