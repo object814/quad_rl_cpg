@@ -6,13 +6,14 @@ import torch.nn.functional as F
 import numpy as np
 from torch.utils.tensorboard import SummaryWriter
 import imageio
+import os
 import pybullet as p
 
 class LearningAgent:
     def __init__(self):
         # Hyperparameters
         # PPO hyperparameters
-        self.learning_rate = 1e-3
+        self.learning_rate = 1e-4
         self.gamma = 0.99
         self.lam = 0.95
         self.epsilon = 0.2
@@ -21,13 +22,13 @@ class LearningAgent:
         self.max_timestep = 4000
         self.rollout_steps = 100
         self.epochs = 10 # Number of epochs per update
-        self.episode_num = 11 # Number of episodes to run
+        self.episode_num = 1000 # Number of episodes to run
         self.batch_size = 32
         self.writer = SummaryWriter("runs/ppo_training")
         self.global_step = 0
         self.payload_drop_count = 0
         # Initialize environment and network
-        self.env = UnitreeA1Env()
+        self.env = UnitreeA1Env(render=False)
         self.observation_dim = self.env.observation_space.shape[0]
         self.action_dim = self.env.action_space.shape[0]
         self.model = PPOActorCritic(self.observation_dim, self.action_dim)
@@ -35,6 +36,14 @@ class LearningAgent:
         
         # Storage for episode-specific data
         self.episode_buffer = []
+
+        # Initialize run logging folders
+        # check if networks/saved_gifs exists
+        if not os.path.exists("networks/saved_gifs"):
+            os.makedirs("networks/saved_gifs")
+        # check if networks/saved_model exists
+        if not os.path.exists("networks/saved_model"):
+            os.makedirs("networks/saved_model")
 
     def run(self):
         '''
