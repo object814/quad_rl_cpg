@@ -107,6 +107,7 @@ class UnitreeA1Env(gym.Env):
 
         self.debug = debug
         self.payload_dropped = False
+        self.last_position = 0
 
         # Initialize the Pybullet client with robot
         if render:
@@ -204,7 +205,8 @@ class UnitreeA1Env(gym.Env):
         ## Calculate the reward based on the observation
 
         # Calculate the reward for distance travelled from starting position
-        forward_progress_reward = forward_progress_reward_weight*((ref_base_position[0]**2 + ref_base_position[1]**2 + ref_base_position[2]**2)**0.5)
+        forward_progress_reward = forward_progress_reward_weight*(ref_base_position[0] - self.last_position)
+        #print(f"forward_progress_reward: {forward_progress_reward}")
 
         # Calculate the reward for roll and pitch stability
         # Get Roll, Pitch, Yaw from quaternion
@@ -213,6 +215,7 @@ class UnitreeA1Env(gym.Env):
         roll_stability_penalty = roll_stability_penalty_weight * max(0, roll ** 2 - threashold)
         pitch_stability_penalty = pitch_stability_penalty_weight * max(0, pitch ** 2 - threashold)
         roll_pitch_stability_penalty = roll_stability_penalty + pitch_stability_penalty
+        #print(f"roll_pitch_stability_penalty: {roll_pitch_stability_penalty}")
 
         # Calculate the penalty for payload drop
         if roll < min_roll or roll > max_roll or pitch < min_pitch or pitch > max_pitch:
@@ -226,10 +229,12 @@ class UnitreeA1Env(gym.Env):
         for i in range(4):
             if ref_foot_contacts[i] == True and ref_foot_velocities[i] > 1e-2:
                 foot_slip_penalty = 10 * foot_slip_penalty_weight
+                #print(f"foot_slip_penalty: {foot_slip_penalty}")
                 break
             else:
                 foot_slip_penalty = 0
-        
+        self.last_position = ref_base_position[0]
+
         # Calculate the total reward
         reward = forward_progress_reward - roll_pitch_stability_penalty - payload_drop_penalty - foot_slip_penalty
 
@@ -250,6 +255,7 @@ class UnitreeA1Env(gym.Env):
         Check if the episode is done.
         """
         if self.payload_dropped==True:
+            print("Payload dropped, oops doopsy")
             return True
         return False
 
@@ -258,6 +264,7 @@ class UnitreeA1Env(gym.Env):
         Reset the environment to the initial state and return the first observation.
         """
         # Reset simulation and robot
+        self.payload_dropped = False
         self.robot.reset()
 
         if self.debug:
@@ -288,7 +295,7 @@ class UnitreeA1Env(gym.Env):
         # Clip the action values to -1 or 1 with integer type
         action = np.array(action, dtype=np.int8)
         for i in range(len(action)):
-            if action[i] < 0:
+            if action[i] < 1e-8:
                 action[i] = -1  # decrease
             else:
                 action[i] = 1  # increase

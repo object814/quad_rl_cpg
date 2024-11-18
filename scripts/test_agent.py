@@ -5,6 +5,8 @@ from envs.gym_env import UnitreeA1Env
 import torch.nn.functional as F
 import numpy as np
 from torch.utils.tensorboard import SummaryWriter
+import imageio
+import pybullet as p
 
 class LearningAgent:
     def __init__(self):
@@ -16,14 +18,14 @@ class LearningAgent:
         self.epsilon = 0.2
         self.entropy_coef = 0.01
         # Training hyperparameters
-        self.max_timestep = 1000
+        self.max_timestep = 4000
         self.rollout_steps = 100
         self.epochs = 10 # Number of epochs per update
-        self.episode_num = 10 # Number of episodes to run
+        self.episode_num = 11 # Number of episodes to run
         self.batch_size = 32
         self.writer = SummaryWriter("runs/ppo_training")
         self.global_step = 0
-        
+        self.payload_drop_count = 0
         # Initialize environment and network
         self.env = UnitreeA1Env()
         self.observation_dim = self.env.observation_space.shape[0]
@@ -73,6 +75,8 @@ class LearningAgent:
                 episode_reward += reward
                 timestep += 1
                 self.global_step += 1
+                if self.env.payload_dropped == True:
+                    self.payload_drop_count += 1
 
                 # Train at intervals
                 if done or timestep % self.rollout_steps == 0:
@@ -84,9 +88,62 @@ class LearningAgent:
             
             print(f"Episode {ep + 1}/{self.episode_num} completed with reward: {episode_reward}")
 
+            if (ep + 1) % 10 == 0:
+                self.record_gif(f"networks/saved_gifs/training_episode_{ep + 1}.gif")
+
         # Close environment and writer
+        print(f"Payload dropped {self.payload_drop_count}/{self.episode_num} times")
+        self.save_model()
         self.env.close()
         self.writer.close()
+    
+    def record_gif(self, filename="networks/saved_gifs/training_episode.gif"):
+        """
+        Record an episode and save it as a GIF using PyBullet's camera rendering.
+
+        Args:
+            filename (str): Path to save the GIF file.
+        """
+        frames = []
+        obs = self.env.reset()
+        done = False
+        step = 0
+        frame_skip = 10
+
+        while not done:
+            # Capture the default camera view
+            if step % frame_skip == 0:
+                width, height, rgb_pixels, _, _ = p.getCameraImage(
+                    width=640,
+                    height=480,
+                    renderer=p.ER_TINY_RENDERER,
+                )
+                frame = np.reshape(rgb_pixels, (height, width, 4))[:, :, :3]  # Keep only RGB channels
+                frame = frame.astype(np.uint8)  # Convert to uint8
+                frames.append(frame)
+
+            obs_tensor = torch.tensor(obs, dtype=torch.float32).unsqueeze(0)
+            with torch.no_grad():
+                action, _, _ = self.model.act(obs_tensor)
+            obs, _, done, _ = self.env.step(action.squeeze(0).numpy())
+            step += 1
+
+        # Save the GIF
+        try:
+            imageio.mimsave(filename, frames, fps=10)
+            print(f"[INFO] GIF saved to {filename}")
+        except Exception as e:
+            print(f"[ERROR] Failed to save GIF: {e}")
+
+    def save_model(self, filename="networks/saved_model/ppo_model.pth"):
+        '''
+        Save the model parameters to a file.
+
+        Args:
+            - filename (str): Name of the file to save the model to.
+        '''
+        torch.save(self.model.state_dict(), filename)
+        print(f"Model saved to {filename}")
 
     def update_network(self):
         '''
@@ -198,6 +255,7 @@ class LearningAgent:
 
         # Value function loss
         value_loss = F.mse_loss(values, returns)
+        value_loss = 0.1 * value_loss
 
         # Entropy bonus
         entropy_bonus = entropy.mean()
@@ -210,3 +268,6 @@ class LearningAgent:
 if __name__ == "__main__":
     agent = LearningAgent()
     agent.run()
+
+
+    

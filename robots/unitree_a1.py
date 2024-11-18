@@ -114,7 +114,12 @@ class UnitreeA1:
             self.animation = CPGAnimation(self.leg_names)
 
         # Create a CPG controller for each leg with debug flag
-        self.cpg_controllers = {leg_name: CPG(dt=self.dt, debug=self.debug) for leg_name in self.leg_names}
+        #self.cpg_controllers = {leg_name: CPG(dt=self.dt, debug=self.debug) for leg_name in self.leg_names}
+        self.cpg_controllers = {}
+        self.cpg_controllers["FR"] = CPG(dt=self.dt, debug=self.debug, phase =  np.pi/2)
+        self.cpg_controllers["FL"] = CPG(dt=self.dt, debug=self.debug, phase = -np.pi/2)
+        self.cpg_controllers["RR"] = CPG(dt=self.dt, debug=self.debug, phase = -np.pi/2)
+        self.cpg_controllers["RL"] = CPG(dt=self.dt, debug=self.debug, phase =  np.pi/2)
 
         # Initialize joint and link indices
         self.controlled_joint_indices = CONTROLLER_JOINT_INDICES
@@ -141,11 +146,11 @@ class UnitreeA1:
         Set friction coefficients for the ground plane and robot's feet.
         """
         # Set friction for the ground plane
-        p.changeDynamics(self.plane, -1, lateralFriction=1.0, spinningFriction=0.1, rollingFriction=0.1, physicsClientId=self.client)
+        p.changeDynamics(self.plane, -1, lateralFriction=0.8, spinningFriction=0.1, rollingFriction=0.1, physicsClientId=self.client)
 
         # Set friction for each foot link
         for foot_link_index in self.end_effector_indices:
-            p.changeDynamics(self.robot, foot_link_index, lateralFriction=1.0, spinningFriction=0.1, rollingFriction=0.1, physicsClientId=self.client)
+            p.changeDynamics(self.robot, foot_link_index, lateralFriction=0.7, spinningFriction=0.1, rollingFriction=0.1, physicsClientId=self.client)
 
     def reset(self):
         """Reset robot to initial position and reset CPG controllers."""
@@ -160,8 +165,10 @@ class UnitreeA1:
             p.resetJointState(self.robot, i, 0, 0, physicsClientId=self.client)
 
         # Reset CPG controllers
-        for leg in self.cpg_controllers:
-            self.cpg_controllers[leg].reset()
+        self.cpg_controllers["FR"].reset(phase =  np.pi/2)
+        self.cpg_controllers["FL"].reset(phase = -np.pi/2)
+        self.cpg_controllers["RR"].reset(phase = -np.pi/2)
+        self.cpg_controllers["RL"].reset(phase =  np.pi/2)
 
         self.add_virtual_weight() #Initiaize the virtual weight at different location every episode reset
 
@@ -187,6 +194,7 @@ class UnitreeA1:
 
         for i, leg_name in enumerate(self.leg_names):
             amplitude_delta, frequency_delta, phase_delta = cpg_actions[i * 3: (i + 1) * 3]
+            
 
             # Update the CPG for this leg and get the new foot position
             foot_position = self.cpg_controllers[leg_name].update(amplitude_delta, frequency_delta, phase_delta)
@@ -317,7 +325,8 @@ class UnitreeA1:
         This force simulates the effect of an added mass without a physical box.
         """
         # Define a random mass for the virtual weight (between 0.5 and 2 kg)
-        box_mass = np.random.uniform(0.5, 1.5)
+        box_mass = np.random.uniform(5, 10)
+        print(f"Virtual weight mass: {box_mass}")
         # box_mass = 2 #For testing virtual force
         self.virtual_force = None
         self.weight_application_link = None
@@ -328,6 +337,7 @@ class UnitreeA1:
 
         # Choose a random link on the robot to apply this force
         self.weight_application_link = np.random.choice([2, 6, 10, 14])
+        print(f"Virtual weight applied to link {self.weight_application_link}")
 
     def apply_virtual_weight_force(self):
         """

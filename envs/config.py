@@ -13,11 +13,11 @@ reset_position = [0, 0, 0.4]                # Initial position of the robot
 
 
 # Reward / penalty weights
-forward_progress_reward_weight = 1.0        # Reward weight for forward progress, distance travelled from the starting position
+forward_progress_reward_weight = 100.0        # Reward weight for forward progress, distance travelled from the starting position
 roll_stability_penalty_weight = 1.0         # Penalty weight for roll stability
 pitch_stability_penalty_weight = 1.0        # Penalty weight for pitch stability
-payload_drop_penalty_weight = 1.0           # Penalty weight for payload drop
-foot_slip_penalty_weight = 1.0              # Penalty weight for foot slip
+payload_drop_penalty_weight = 10.0           # Penalty weight for payload drop
+foot_slip_penalty_weight = 0              # Penalty weight for foot slip
 
 
 # Penalty thresholds
