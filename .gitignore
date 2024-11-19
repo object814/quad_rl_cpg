@@ -3,6 +3,7 @@ runs/*
 networks/saved_*
 networks/img_export/*
 logs/*
+demos/saved_gifs/*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
