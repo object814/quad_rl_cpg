@@ -5,7 +5,7 @@ Implementation for CPG controller for robot leg tip trajectory generation.
 import numpy as np
 
 class CPG:
-    def __init__(self, dt, phase, amplitude=0.01, frequency=5.0, debug=False):
+    def __init__(self, dt, phase, amplitude=0.01, frequency=3.5, debug=False):
         """
         Initialize CPG parameters for a single leg.
 
@@ -22,6 +22,11 @@ class CPG:
         self.phase = phase
 
         self.debug = debug  # Debug flag for printing internal state
+
+        #CPG initial configuration (Useful for resetting the CPG)
+        self.ini_amplitude = amplitude
+        self.ini_frequency = frequency
+        self.ini_phase = phase
 
         # Internal states for CPG dynamics
         self.current_amplitude = amplitude
@@ -50,23 +55,18 @@ class CPG:
             print(f"[DEBUG] Initialized CPG with amplitude: {amplitude}, frequency: {frequency}, phase: {phase}")
 
 
-    def reset(self, phase, amplitude=0.01, frequency=5.0):
+    def reset(self):
         """
         Reset the CPG parameters to their initial values.
-
-        Args:
-            amplitude (float): Reset amplitude value.
-            frequency (float): Reset frequency value.
-            phase (float): Reset phase value.
         """
-        self.amplitude = amplitude
-        self.frequency = frequency
-        self.phase = phase
-        self.current_amplitude = amplitude
-        self.current_phase = phase
+        self.amplitude = self.ini_amplitude
+        self.frequency = self.ini_frequency
+        self.phase = self.ini_phase
+        self.current_amplitude = self.amplitude
+        self.current_phase = self.phase
 
         if self.debug:
-            print(f"[DEBUG] CPG reset to amplitude: {amplitude}, frequency: {frequency}, phase: {phase}")
+            print(f"[DEBUG] CPG reset to amplitude: {self.amplitude}, frequency: {self.frequency}, phase: {self.phase}")
 
 
     def update(self, amplitude_delta, frequency_delta, phase_delta):
