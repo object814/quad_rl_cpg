@@ -92,7 +92,7 @@ class UnitreeA1Env(gym.Env):
     The agent controls the amplitude, while phase and frequency are kept constant.
     """
     
-    def __init__(self, dt=cfg.dt, render=True, debug=False, animate_cpg=False, fixed_base=False):
+    def __init__(self, dt=cfg.dt, render=True, debug=False, animate_cpg=False, fixed_base=False, env_add_weight=cfg.add_weight):
         """
         Initialize the Unitree A1 environment.
 
@@ -108,13 +108,14 @@ class UnitreeA1Env(gym.Env):
         self.debug = debug
         self.payload_dropped = False
         self.last_position = 0
+        self.is_weight_enabled = env_add_weight
 
         # Initialize the Pybullet client with robot
         if render:
             client_id = p.connect(p.GUI)
         else:
             client_id = p.connect(p.DIRECT)
-        self.robot = UnitreeA1(client=client_id, dt=dt, debug=debug, animate_cpg=animate_cpg, fixed_base=fixed_base)
+        self.robot = UnitreeA1(client=client_id, dt=dt, debug=debug, animate_cpg=animate_cpg, fixed_base=fixed_base, add_weight=self.is_weight_enabled)
 
         # Action space: 12 actions, each can be -1 (decrease) or 1 (increase)
         action_dim = self.robot.get_action_dimension()

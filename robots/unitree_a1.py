@@ -96,6 +96,7 @@ class UnitreeA1:
         self.reset_position = reset_position
         self.debug = debug
         self.animate_cpg = animate_cpg
+        self.is_weight_enabled = add_weight
 
         p.setTimeStep(dt, physicsClientId=self.client)
         p.setGravity(0, 0, -9.81, physicsClientId=self.client)
@@ -165,16 +166,18 @@ class UnitreeA1:
             p.resetJointState(self.robot, i, 0, 0, physicsClientId=self.client)
 
         # Reset CPG controllers
-        self.cpg_controllers["FR"].reset(phase =  np.pi/2)
-        self.cpg_controllers["FL"].reset(phase = -np.pi/2)
-        self.cpg_controllers["RR"].reset(phase = -np.pi/2)
-        self.cpg_controllers["RL"].reset(phase =  np.pi/2)
+        self.cpg_controllers["FR"].reset()
+        self.cpg_controllers["FL"].reset()
+        self.cpg_controllers["RR"].reset()
+        self.cpg_controllers["RL"].reset()
 
-        self.add_virtual_weight() #Initiaize the virtual weight at different location every episode reset
+        if self.is_weight_enabled:
+            self.add_virtual_weight() #Initiaize the virtual weight at different location every episode reset
 
     def step(self):
         """Step the simulation."""
-        self.apply_virtual_weight_force() #Apply the force everytime step
+        if self.is_weight_enabled:
+            self.apply_virtual_weight_force() #Apply the force everytime step
         p.stepSimulation(physicsClientId=self.client)
         
 
