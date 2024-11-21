@@ -38,7 +38,9 @@ class Observations():
             self._base_position = all_observations[16:19]
             self._base_orientation = all_observations[19:23]
             self._foot_velocities = all_observations[23:27]
-            self._foot_contacts = all_observations[27:]
+            self._foot_contacts = all_observations[27:28]
+            self._box_mass = all_observations[28]
+            self._box_link = all_observations[29]
         else:
             # Initialize empty lists if no array is provided
             self._joint_positions = []
@@ -47,14 +49,18 @@ class Observations():
             self._base_orientation = []
             self._foot_velocities = []
             self._foot_contacts = []
+            self._box_mass = 0
+            self._box_link = -1
         
-    def update(self, joint_positions, joint_velocities, base_position, base_orientation, foot_velocities, foot_contacts):
+    def update(self, joint_positions, joint_velocities, base_position, base_orientation, foot_velocities, foot_contacts, box_mass, box_link):
         self._joint_positions = joint_positions
         self._joint_velocities = joint_velocities
         self._base_position = base_position
         self._base_orientation = base_orientation
         self._foot_velocities = foot_velocities
         self._foot_contacts = foot_contacts
+        self._box_mass = box_mass
+        self._box_link = box_link   
 
     @property
     def all_observations(self):
@@ -64,7 +70,9 @@ class Observations():
             self._base_position,
             self._base_orientation,
             self._foot_velocities,
-            self._foot_contacts
+            self._foot_contacts,
+            [self._box_mass],
+            [self._box_link]
         ])
     @property
     def joint_positions(self):
@@ -147,8 +155,8 @@ class UnitreeA1Env(gym.Env):
         Returns:
             observation (np.array): The current observation.
         """
-        joint_positions, joint_velocities, base_position, base_orientation, foot_velocities, foot_contacts = self.robot.get_observation()
-        self.observation.update(joint_positions, joint_velocities, base_position, base_orientation, foot_velocities, foot_contacts)
+        joint_positions, joint_velocities, base_position, base_orientation, foot_velocities, foot_contacts, box_mass, box_link = self.robot.get_observation()
+        self.observation.update(joint_positions, joint_velocities, base_position, base_orientation, foot_velocities, foot_contacts, box_mass, box_link)
         
         # Normalize the observation
         # normalized_observations = self.observation_normalizer.normalize(self.observation.all_observations)
@@ -213,8 +221,8 @@ class UnitreeA1Env(gym.Env):
         # Get Roll, Pitch, Yaw from quaternion
         r = R.from_quat(ref_base_orientation)
         roll, pitch, yaw = r.as_euler('xyz', degrees=False)
-        roll_stability_penalty = roll_stability_penalty_weight * max(0, roll ** 2 - threashold)
-        pitch_stability_penalty = pitch_stability_penalty_weight * max(0, pitch ** 2 - threashold)
+        roll_stability_penalty = roll_stability_penalty_weight * max(0, abs(roll) - threashold)
+        pitch_stability_penalty = pitch_stability_penalty_weight * max(0, abs(pitch) - threashold)
         roll_pitch_stability_penalty = roll_stability_penalty + pitch_stability_penalty
         #print(f"roll_pitch_stability_penalty: {roll_pitch_stability_penalty}")
 

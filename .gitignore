@@ -1,9 +1,12 @@
 temp/*
-runs/*
+runs
 networks/saved_*
-networks/img_export/*
-logs/*
+networks/img_export
+logs
 demos/saved_gifs/*
+ppo_tensorboard
+networks/gifs
+networks/models
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

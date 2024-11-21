@@ -65,4 +65,4 @@ def demo_001(save_gif = False):
     env.close()
 
 if __name__ == "__main__":
-    demo_001(save_gif = True)
+    demo_001(save_gif = False)

@@ -171,8 +171,7 @@ class UnitreeA1:
         self.cpg_controllers["RR"].reset()
         self.cpg_controllers["RL"].reset()
 
-        if self.is_weight_enabled:
-            self.add_virtual_weight() #Initiaize the virtual weight at different location every episode reset
+        self.add_virtual_weight() #Initiaize the virtual weight at different location every episode reset
 
     def step(self):
         """Step the simulation."""
@@ -276,7 +275,12 @@ class UnitreeA1:
 
         # Get the base position and orientation
         base_position, base_orientation = p.getBasePositionAndOrientation(self.robot, physicsClientId=self.client)
-
+        if self.is_weight_enabled:
+            box_mass = self.virtual_force[2] / -9.81
+            box_link = self.weight_application_link
+        else:
+            box_mass = 0
+            box_link = None
         # Foot tip contact information
         contact_points = p.getContactPoints(self.robot, self.plane, physicsClientId=self.client)
         for contact in contact_points:
@@ -307,14 +311,14 @@ class UnitreeA1:
         foot_contacts = np.array(foot_contacts)
 
         # Ensure the total observation dimension is correct
-        dimension = len(joint_positions) + len(joint_velocities) + len(base_position) + len(base_orientation) + len(foot_velocities) + len(foot_contacts)
+        dimension = len(joint_positions) + len(joint_velocities) + len(base_position) + len(base_orientation) + len(foot_velocities) + len(foot_contacts) + 2
         assert dimension == self.get_observation_dimension(), "Observation dimension mismatch"
 
-        return joint_positions, joint_velocities, base_position, base_orientation, foot_velocities, foot_contacts
+        return joint_positions, joint_velocities, base_position, base_orientation, foot_velocities, foot_contacts, box_mass, box_link
 
     def get_observation_dimension(self):
         """Return the dimension of the observation."""
-        return 2 * self.num_controlled_joints + 7 + 4 + 4
+        return 2 * self.num_controlled_joints + 7 + 4 + 4 + 2
     
     def get_action_dimension(self):
         """
@@ -329,18 +333,19 @@ class UnitreeA1:
         """
         # Define a random mass for the virtual weight (between 0.5 and 2 kg)
         box_mass = np.random.uniform(5, 10)
-        print(f"Virtual weight mass: {box_mass}")
-        # box_mass = 2 #For testing virtual force
-        self.virtual_force = None
-        self.weight_application_link = None
 
         # Calculate the force vector for gravity in the z-direction
         gravity = -9.81  # Gravity acceleration (m/s^2)
-        self.virtual_force = [0, 0, box_mass * gravity]  # Force vector to simulate weight
-
-        # Choose a random link on the robot to apply this force
-        self.weight_application_link = np.random.choice([2, 6, 10, 14])
-        print(f"Virtual weight applied to link {self.weight_application_link}")
+        if self.is_weight_enabled:
+            self.virtual_force = [0, 0, box_mass * gravity]  # Force vector to simulate weight
+            # Choose a random link on the robot to apply this force
+            self.weight_application_link = np.random.choice([2, 6, 10, 14])
+            print(f"Virtual weight mass: {box_mass}")
+            print(f"Virtual weight applied to link {self.weight_application_link}")
+        else:
+            print("Not adding virtual weight")
+            self.virtual_force = None
+            self.weight_application_link = None
 
     def apply_virtual_weight_force(self):
         """
