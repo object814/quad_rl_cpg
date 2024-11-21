@@ -1,0 +1,27 @@
+Evaluation Results (20241120180137):
+Number of Episodes: 20
+Success Rate: 10.00%
+Average Reward: -4916.73
+Average Episode Length: 23302.55 steps
+
+Detailed per-episode results:
+Episode 1: Reward = -3597.92, Length = 13833, Success = False
+Episode 2: Reward = -6474.51, Length = 9439, Success = False
+Episode 3: Reward = -5219.85, Length = 6149, Success = False
+Episode 4: Reward = -2259.06, Length = 26906, Success = False
+Episode 5: Reward = -8442.47, Length = 10374, Success = False
+Episode 6: Reward = -5560.68, Length = 7487, Success = False
+Episode 7: Reward = -3938.57, Length = 10941, Success = False
+Episode 8: Reward = 9344.76, Length = 77026, Success = False
+Episode 9: Reward = 8755.94, Length = 100000, Success = True
+Episode 10: Reward = -31681.43, Length = 8092, Success = False
+Episode 11: Reward = -4886.04, Length = 13198, Success = False
+Episode 12: Reward = -5402.23, Length = 10570, Success = False
+Episode 13: Reward = 14570.67, Length = 100000, Success = True
+Episode 14: Reward = -21357.10, Length = 12592, Success = False
+Episode 15: Reward = -5956.33, Length = 10106, Success = False
+Episode 16: Reward = -6275.47, Length = 20, Success = False
+Episode 17: Reward = -2775.92, Length = 21130, Success = False
+Episode 18: Reward = -6992.52, Length = 7652, Success = False
+Episode 19: Reward = -5100.75, Length = 10691, Success = False
+Episode 20: Reward = -5085.06, Length = 9845, Success = False

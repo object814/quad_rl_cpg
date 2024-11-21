@@ -1,0 +1,17 @@
+Evaluation Results (20241120163818):
+Number of Episodes: 10
+Success Rate: 90.00%
+Average Reward: -50198.90
+Average Episode Length: 9881.50 steps
+
+Detailed per-episode results:
+Episode 1: Reward = 1002.69, Length = 10000, Success = True
+Episode 2: Reward = -535.24, Length = 10000, Success = True
+Episode 3: Reward = -108.81, Length = 10000, Success = True
+Episode 4: Reward = -244.61, Length = 10000, Success = True
+Episode 5: Reward = -142.95, Length = 10000, Success = True
+Episode 6: Reward = -500648.89, Length = 8815, Success = False
+Episode 7: Reward = -328.85, Length = 10000, Success = True
+Episode 8: Reward = -578.40, Length = 10000, Success = True
+Episode 9: Reward = -80.89, Length = 10000, Success = True
+Episode 10: Reward = -323.07, Length = 10000, Success = True

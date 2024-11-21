@@ -13,17 +13,17 @@ class LearningAgent:
     def __init__(self):
         # Hyperparameters
         # PPO hyperparameters
-        self.learning_rate = 1e-3
+        self.learning_rate = 3e-4
         self.gamma = 0.99
         self.lam = 0.95
         self.epsilon = 0.2
-        self.entropy_coef = 0.01
+        self.entropy_coef = 0.001
         # Training hyperparameters
-        self.max_timestep = 2000
-        self.rollout_steps = 1000
-        self.epochs = 10 # Number of epochs per update
-        self.episode_num = 30000 # Number of episodes to run
-        self.batch_size = 32
+        self.max_timestep = 10000
+        self.rollout_steps = 2048
+        self.epochs = 15 # Number of epochs per update
+        self.episode_num = 1500 # Number of episodes to run
+        self.batch_size = 256
         self.writer = SummaryWriter("runs/ppo_training")
         self.global_step = 0
         self.payload_drop_count = 0
@@ -46,7 +46,7 @@ class LearningAgent:
             done = False
             episode_reward = 0
             timestep = 0
-            records_every_n_ep = 10
+
             
             while not done and timestep < self.max_timestep:
                 obs_tensor = torch.tensor(obs, dtype=torch.float32).unsqueeze(0)
@@ -85,22 +85,27 @@ class LearningAgent:
                 if done or timestep % self.rollout_steps == 0:
                     self.update_network()
                     self.episode_buffer = []  # Clear buffer after update
+                
+                
 
             # Log episode rewards
             self.writer.add_scalar("Reward/Total", episode_reward, ep)
             
             print(f"Episode {ep + 1}/{self.episode_num} completed with reward: {episode_reward}")
 
-            if (ep + 1) % 500 == 0:
-                self.record_gif(f"networks/saved_gifs/training_episode_{ep + 1}.gif")
+            if (ep + 1) % 100 == 0:
+                self.record_gif(f"networks/saved_gifs_3/training_episode_{ep + 1}.gif")
+
+            if (ep+1) % 100 == 0:
+                self.save_model(episode_num=ep)
 
         # Close environment and writer
         print(f"Payload dropped {self.payload_drop_count}/{self.episode_num} times")
-        self.save_model()
+        self.save_model(episode_num=ep)
         self.env.close()
         self.writer.close()
     
-    def record_gif(self, filename="networks/saved_gifs/training_episode.gif"):
+    def record_gif(self, filename="networks/saved_gifs_3/training_episode.gif"):
         """
         Record an episode and save it as a GIF using PyBullet's camera rendering.
 
@@ -138,13 +143,15 @@ class LearningAgent:
         except Exception as e:
             print(f"[ERROR] Failed to save GIF: {e}")
 
-    def save_model(self, filename="networks/saved_model/ppo_model.pth"):
+    def save_model(self, episode_num, base_filename="networks/saved_model_3/ppo_model"):
         '''
-        Save the model parameters to a file.
+        Save the model parameters to a file with a number appended to the filename.
 
         Args:
-            - filename (str): Name of the file to save the model to.
+            - episode_num (int): The current episode number.
+            - base_filename (str): Base name of the file to save the model to.
         '''
+        filename = f"{base_filename}_ep{episode_num+1}.pth"
         torch.save(self.model.state_dict(), filename)
         print(f"Model saved to {filename}")
 
@@ -229,6 +236,7 @@ class LearningAgent:
         for t in reversed(range(len(rewards))):
             gae = deltas[t] + self.gamma * self.lam * (1 - dones[t]) * gae
             advantages[t] = gae
+        advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
         return advantages
 
     def ppo_loss(self, log_probs, log_probs_old, advantages, values, returns, entropy):

@@ -101,6 +101,7 @@ class UnitreeA1:
         p.setGravity(0, 0, -9.81, physicsClientId=self.client)
         p.setAdditionalSearchPath(pybullet_data.getDataPath())
 
+
         if self.debug:
             print("[DEBUG] Initializing Unitree A1 robot...")
 
@@ -146,11 +147,11 @@ class UnitreeA1:
         Set friction coefficients for the ground plane and robot's feet.
         """
         # Set friction for the ground plane
-        p.changeDynamics(self.plane, -1, lateralFriction=0.8, spinningFriction=0.1, rollingFriction=0.1, physicsClientId=self.client)
+        p.changeDynamics(self.plane, -1, lateralFriction=2.0, spinningFriction=1.0, rollingFriction=1.0, physicsClientId=self.client)
 
         # Set friction for each foot link
         for foot_link_index in self.end_effector_indices:
-            p.changeDynamics(self.robot, foot_link_index, lateralFriction=0.7, spinningFriction=0.1, rollingFriction=0.1, physicsClientId=self.client)
+            p.changeDynamics(self.robot, foot_link_index, lateralFriction=2.0, spinningFriction=1.0, rollingFriction=1.0, physicsClientId=self.client)
 
     def reset(self):
         """Reset robot to initial position and reset CPG controllers."""
@@ -273,7 +274,8 @@ class UnitreeA1:
 
         # Get the base position and orientation
         base_position, base_orientation = p.getBasePositionAndOrientation(self.robot, physicsClientId=self.client)
-
+        box_mass = self.virtual_force[2] / -9.81
+        box_link = self.weight_application_link
         # Foot tip contact information
         contact_points = p.getContactPoints(self.robot, self.plane, physicsClientId=self.client)
         for contact in contact_points:
@@ -304,14 +306,14 @@ class UnitreeA1:
         foot_contacts = np.array(foot_contacts)
 
         # Ensure the total observation dimension is correct
-        dimension = len(joint_positions) + len(joint_velocities) + len(base_position) + len(base_orientation) + len(foot_velocities) + len(foot_contacts)
+        dimension = len(joint_positions) + len(joint_velocities) + len(base_position) + len(base_orientation) + len(foot_velocities) + len(foot_contacts) + 2
         assert dimension == self.get_observation_dimension(), "Observation dimension mismatch"
 
-        return joint_positions, joint_velocities, base_position, base_orientation, foot_velocities, foot_contacts
+        return joint_positions, joint_velocities, base_position, base_orientation, foot_velocities, foot_contacts, box_mass, box_link
 
     def get_observation_dimension(self):
         """Return the dimension of the observation."""
-        return 2 * self.num_controlled_joints + 7 + 4 + 4
+        return 2 * self.num_controlled_joints + 7 + 4 + 4 + 2
     
     def get_action_dimension(self):
         """
@@ -325,7 +327,7 @@ class UnitreeA1:
         This force simulates the effect of an added mass without a physical box.
         """
         # Define a random mass for the virtual weight (between 0.5 and 2 kg)
-        box_mass = np.random.uniform(1, 2)
+        box_mass = np.random.uniform(5, 10)
         print(f"Virtual weight mass: {box_mass}")
         # box_mass = 2 #For testing virtual force
         self.virtual_force = None

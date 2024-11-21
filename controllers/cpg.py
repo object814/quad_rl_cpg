@@ -30,9 +30,8 @@ class CPG:
         # Define parameter limits (TODO: adjust as necessary)
         self.amplitude_min = 0.05
         self.amplitude_max = 0.35
-        self.frequency_min = 0.5
-        #self.frequency_max = 10
-        self.frequency_max = 1.0
+        self.frequency_min = 0.1
+        self.frequency_max = 3.0
         self.phase_min = -np.pi
         self.phase_max = np.pi
 
@@ -42,10 +41,10 @@ class CPG:
             h (float): Robot height.
             gc (float): Maximum swing height.
         """
-        self.d_step=0.175
+        self.d_step=0.150
         self.h=0.30
         self.gc=0.10
-        self.gp=0.0
+        self.gp=0.0    
 
         if self.debug:
             print(f"[DEBUG] Initialized CPG with amplitude: {amplitude}, frequency: {frequency}, phase: {phase}")
@@ -94,10 +93,10 @@ class CPG:
         # Adjust deltas (to 1% of the full range)
         # Originally deltas are just 1 or -1. Here we adjust to
         # +-1% or the whole range.
-        amplitude_delta = amplitude_delta * ((self.amplitude_max - self.amplitude_min) *0.001)
+        amplitude_delta = amplitude_delta * ((self.amplitude_max - self.amplitude_min) *0.005)
 
-        frequency_delta = frequency_delta * ((self.frequency_max - self.frequency_min) *0.001)
-        phase_delta = phase_delta * ((self.phase_max - self.phase_min) *0.001)
+        frequency_delta = frequency_delta * ((self.frequency_max - self.frequency_min) *0.005)
+        phase_delta = phase_delta * ((self.phase_max - self.phase_min) *0.005)
         self.amplitude = np.clip(self.amplitude + amplitude_delta, self.amplitude_min, self.amplitude_max)
         self.frequency = np.clip(self.frequency + frequency_delta, self.frequency_min, self.frequency_max)
         self.phase += phase_delta
@@ -115,7 +114,7 @@ class CPG:
         #print("--------------------------")
 
         # Update amplitude using dynamic equation
-        convergence_rate = 10.0  # Coefficient to control convergence speed
+        convergence_rate = 30.0  # Coefficient to control convergence speed
         self.current_amplitude += convergence_rate * (self.amplitude - self.current_amplitude) * self.dt
 
         # Update phase using frequency and wrap phase
