@@ -51,7 +51,7 @@ class SB3PPOTrainer:
 
         # Directory setup
         self.timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-        self.model_dir = f"networks/models/SB3_ppo_{self.timestamp}"
+        self.model_dir = f"networks/saved_models_sb3/SB3_ppo_{self.timestamp}"
         self.gif_dir = f"networks/gifs/SB3_ppo_{self.timestamp}"
         os.makedirs(self.model_dir, exist_ok=True)
         os.makedirs(self.gif_dir, exist_ok=True)
@@ -66,7 +66,7 @@ class SB3PPOTrainer:
             ent_coef=self.ent_coef,
             vf_coef=self.vf_coef,
             verbose=1,
-            tensorboard_log="./ppo_tensorboard/"
+            tensorboard_log="./runs/sb3_model_training/"
         )
 
         # Callback for saving models at intervals

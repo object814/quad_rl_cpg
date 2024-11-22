@@ -15,6 +15,59 @@ ME5418 Project - Group 21: Quadruped Reinforcement Learning with Central Pattern
    ```bash
    conda activate group-21-rl-cpg
    ```
+
+
+---
+## Final Submission - Running Tests
+This is the tutorial for running demo scripts for the final submission.
+
+### 1. Run Evaluations ###
+We have four different evaluation setups to run repectively. Please run all commands under project base directory (group_21_rl_cpg)
+
+#### 1.1 Raw CPG controller without payload ####
+```
+python -m demos.demo_cpg_1
+```
+It will run 10 episodes with raw CPG controllers and no payload applied.
+
+#### 1.2 Raw CPG controller with payload ####
+```
+python -m demos.demo_cpg_2
+```
+It will run 10 episodes with raw CPG controllers and random payload applied.
+
+#### 1.3 Custom model with payload ####
+Before running the evaluation for our custom model, you can run the training according to the section below first. Or just run the command directly with our trained model:
+```
+python -m demos.demo_model
+```
+If you want to run your trained model, please navigate to the bottom of demos.demo_model.py and change the model_path manually.
+This evaluation will run the our custom model trained with our PPO learning agent for 50 episodes.
+
+#### 1.4 Stable Baseline 3 model with payload ####
+Before running the evaluation for the SB3 model, you can run the training according to the section below first. Or just run the command directly with our trained model:
+```
+python -m demos.demo_sb3_model
+```
+If you want to run your trained model, please navigate to the bottom of demos.demo_sb3_model.py and change the model_path manually.
+This evaluation will run the SB3 model trained with SB3 PPO learning agent for 50 episodes.
+
+### 2. Run Training ###
+If you want to try training the custom and SB3 models yourself, you can run the following command:
+```
+python -m scripts.custom_learning_agent
+```
+Trained model will be saved to networks/saved_models, and logging will be saved to runs/custom_model_training.
+
+or
+```
+python -m scripts.learning_agent_sb3
+```
+Trained model will be saved to networks/saved_models_sb3, and logging will be saved to runs/sb3_model_training.
+
+---
+**The following sections are for previous submissions.**
+
 ---
 ## Learning Agent - Running Tests
 ### 1. **Test Agent (`scripts/test_agent.py`)**
@@ -122,7 +175,6 @@ The test configurations can be adjusted in the `envs/config.py` file:
    - `box_mass`: Modify the payload mass.  
    - `attach_link_id`: Specify the payload position.
 
----
 
 ## Further Documentation
 

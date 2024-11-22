@@ -8,6 +8,7 @@ from torch.utils.tensorboard import SummaryWriter
 import imageio
 import pybullet as p
 from envs.reward_normalization import RewardNormalizer
+import os
 
 class LearningAgent:
     def __init__(self):
@@ -24,11 +25,11 @@ class LearningAgent:
         self.epochs = 15 # Number of epochs per update
         self.episode_num = 1500 # Number of episodes to run
         self.batch_size = 256
-        self.writer = SummaryWriter("runs/ppo_training")
+        self.writer = SummaryWriter("runs/custom_model_training")
         self.global_step = 0
         self.payload_drop_count = 0
         # Initialize environment and network
-        self.env = UnitreeA1Env()
+        self.env = UnitreeA1Env(render=False)
         self.observation_dim = self.env.observation_space.shape[0]
         self.action_dim = self.env.action_space.shape[0]
         self.model = PPOActorCritic(self.observation_dim, self.action_dim)
@@ -94,7 +95,7 @@ class LearningAgent:
             print(f"Episode {ep + 1}/{self.episode_num} completed with reward: {episode_reward}")
 
             if (ep + 1) % 100 == 0:
-                self.record_gif(f"networks/saved_gifs_3/training_episode_{ep + 1}.gif")
+                self.record_gif(f"networks/saved_gifs/training_episode_{ep + 1}.gif")
 
             if (ep+1) % 100 == 0:
                 self.save_model(episode_num=ep)
@@ -105,7 +106,7 @@ class LearningAgent:
         self.env.close()
         self.writer.close()
     
-    def record_gif(self, filename="networks/saved_gifs_3/training_episode.gif"):
+    def record_gif(self, filename="networks/saved_gifs/training_episode.gif"):
         """
         Record an episode and save it as a GIF using PyBullet's camera rendering.
 
@@ -143,7 +144,7 @@ class LearningAgent:
         except Exception as e:
             print(f"[ERROR] Failed to save GIF: {e}")
 
-    def save_model(self, episode_num, base_filename="networks/saved_model_3/ppo_model"):
+    def save_model(self, episode_num, base_folder="networks/saved_models"):
         '''
         Save the model parameters to a file with a number appended to the filename.
 
@@ -151,7 +152,10 @@ class LearningAgent:
             - episode_num (int): The current episode number.
             - base_filename (str): Base name of the file to save the model to.
         '''
-        filename = f"{base_filename}_ep{episode_num+1}.pth"
+        # Check if base folder exists
+        if not os.path.exists(base_folder):
+            os.makedirs(base_folder)
+        filename = f"{base_folder}/ppo_model_{episode_num}.pth"
         torch.save(self.model.state_dict(), filename)
         print(f"Model saved to {filename}")
 
