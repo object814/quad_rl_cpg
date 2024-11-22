@@ -264,7 +264,6 @@ class UnitreeA1Env(gym.Env):
         Check if the episode is done.
         """
         if self.payload_dropped==True:
-            print("Payload dropped, oops doopsy")
             return True
         return False
 
