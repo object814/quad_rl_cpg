@@ -1,4 +1,4 @@
-name: group-21-rl-cpg
+name: rl-cpg
 channels:
   - defaults
 dependencies:
@@ -36,6 +36,7 @@ dependencies:
       - gym==0.26.2
       - gym-notices==0.0.8
       - gymnasium==0.29.1
+      - imageio==2.36.0
       - jinja2==3.1.4
       - kiwisolver==1.4.7
       - markdown==3.7
@@ -56,7 +57,6 @@ dependencies:
       - nvidia-nccl-cu12==2.20.5
       - nvidia-nvjitlink-cu12==12.6.77
       - nvidia-nvtx-cu12==12.1.105
-      - onnx==1.17.0
       - opencv-python==4.6.0.66
       - packaging==24.1
       - pandas==1.5.2
@@ -67,6 +67,7 @@ dependencies:
       - python-dateutil==2.9.0.post0
       - pytz==2024.2
       - scipy==1.9.3
+      - shimmy==1.2.1
       - six==1.16.0
       - stable-baselines3==2.3.2
       - sympy==1.13.3
@@ -76,4 +77,4 @@ dependencies:
       - triton==3.0.0
       - typing-extensions==4.12.2
       - werkzeug==3.1.2
-prefix: /home/carloshdezm/anaconda3/envs/group-21-rl-cpg
+prefix: /home/haoyu/anaconda3/envs/rl-cpg
